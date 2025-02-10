@@ -2,59 +2,59 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-### [1.0.29](https://github.com/halfnelson/svelte-native/compare/v1.0.28...v1.0.29) (2024-11-07)
+### [1.0.29](https://github.com/nativescript-community/svelte-native/compare/v1.0.28...v1.0.29) (2024-11-07)
 
 
 ### Bug Fixes
 
-* potential error while using `goBack` ([33eebc8](https://github.com/halfnelson/svelte-native/commit/33eebc8b0d2c699c5b7ad5acf69eec3cbf7fb697))
+* potential error while using `goBack` ([33eebc8](https://github.com/nativescript-community/svelte-native/commit/33eebc8b0d2c699c5b7ad5acf69eec3cbf7fb697))
 
-### [1.0.28](https://github.com/halfnelson/svelte-native/compare/v1.0.27...v1.0.28) (2024-10-16)
-
-
-### Bug Fixes
-
-* allow to extend `IntrinsicElements` ([45978dd](https://github.com/halfnelson/svelte-native/commit/45978ddfc0d0072081cbbc8f40c9e9e00073dac9))
-* expose `AsComponent` for custom Template classes ([c72688c](https://github.com/halfnelson/svelte-native/commit/c72688cf0130f8ba5c05e0a175ec53f78f927517))
-* expose ios / android components (wrapping #if __ANDROID__/__IOS__) ([acc7289](https://github.com/halfnelson/svelte-native/commit/acc72899471ad3760c05e4bb98138e678ebc971a))
-
-### [1.0.27](https://github.com/halfnelson/svelte-native/compare/v1.0.26...v1.0.27) (2024-07-04)
+### [1.0.28](https://github.com/nativescript-community/svelte-native/compare/v1.0.27...v1.0.28) (2024-10-16)
 
 
 ### Bug Fixes
 
-* agnostic `resolveComponentElement` and typings to fit all cases ([e642093](https://github.com/halfnelson/svelte-native/commit/e6420938d2f56c4c70b5b8e13261edfd172796bd))
-* call `initializeDom` in dom file because some users might not use top level index ([baa0361](https://github.com/halfnelson/svelte-native/commit/baa036136a53dcbf088bd04dc93569559f5a4522))
-* use window.document in all cases ([184475d](https://github.com/halfnelson/svelte-native/commit/184475d827bcb20bd7be06be1f7ec38bd5c595b3))
+* allow to extend `IntrinsicElements` ([45978dd](https://github.com/nativescript-community/svelte-native/commit/45978ddfc0d0072081cbbc8f40c9e9e00073dac9))
+* expose `AsComponent` for custom Template classes ([c72688c](https://github.com/nativescript-community/svelte-native/commit/c72688cf0130f8ba5c05e0a175ec53f78f927517))
+* expose ios / android components (wrapping #if __ANDROID__/__IOS__) ([acc7289](https://github.com/nativescript-community/svelte-native/commit/acc72899471ad3760c05e4bb98138e678ebc971a))
 
-### [1.0.26](https://github.com/halfnelson/svelte-native/compare/v1.0.25...v1.0.26) (2024-07-02)
-
-
-### Bug Fixes
-
-* missing exports (sorry for the 3 releases back to back ...) ([8269bbd](https://github.com/halfnelson/svelte-native/commit/8269bbd0be853f011a72bf90664ea29d682a4031))
-
-### [1.0.25](https://github.com/halfnelson/svelte-native/compare/v1.0.24...v1.0.25) (2024-07-02)
+### [1.0.27](https://github.com/nativescript-community/svelte-native/compare/v1.0.26...v1.0.27) (2024-07-04)
 
 
 ### Bug Fixes
 
-* export navigation util methods like `resolveFrame` and `resolveComponentElement` ([019a835](https://github.com/halfnelson/svelte-native/commit/019a835617f15e21415b19737e9107963c93c6dc))
+* agnostic `resolveComponentElement` and typings to fit all cases ([e642093](https://github.com/nativescript-community/svelte-native/commit/e6420938d2f56c4c70b5b8e13261edfd172796bd))
+* call `initializeDom` in dom file because some users might not use top level index ([baa0361](https://github.com/nativescript-community/svelte-native/commit/baa036136a53dcbf088bd04dc93569559f5a4522))
+* use window.document in all cases ([184475d](https://github.com/nativescript-community/svelte-native/commit/184475d827bcb20bd7be06be1f7ec38bd5c595b3))
 
-### [1.0.24](https://github.com/halfnelson/svelte-native/compare/v1.0.23...v1.0.24) (2024-07-02)
-
-
-### Bug Fixes
-
-* allow `backStackEntry` to be passed directly to `goBack` ([8e59028](https://github.com/halfnelson/svelte-native/commit/8e590280832934aaf4ff703e865fb9fbc3d94455))
-
-### [1.0.23](https://github.com/halfnelson/svelte-native/compare/v1.0.21...v1.0.23) (2024-06-26)
+### [1.0.26](https://github.com/nativescript-community/svelte-native/compare/v1.0.25...v1.0.26) (2024-07-02)
 
 
 ### Bug Fixes
 
-* dont crash on exit if no root page instance ([7065006](https://github.com/halfnelson/svelte-native/commit/7065006c05ec9141f0e78fcb9608bce4bb503174))
-* update peer deps ([0f23241](https://github.com/halfnelson/svelte-native/commit/0f23241888c6ca3fc9a1a802baff367b5c0e4ea0))
+* missing exports (sorry for the 3 releases back to back ...) ([8269bbd](https://github.com/nativescript-community/svelte-native/commit/8269bbd0be853f011a72bf90664ea29d682a4031))
+
+### [1.0.25](https://github.com/nativescript-community/svelte-native/compare/v1.0.24...v1.0.25) (2024-07-02)
+
+
+### Bug Fixes
+
+* export navigation util methods like `resolveFrame` and `resolveComponentElement` ([019a835](https://github.com/nativescript-community/svelte-native/commit/019a835617f15e21415b19737e9107963c93c6dc))
+
+### [1.0.24](https://github.com/nativescript-community/svelte-native/compare/v1.0.23...v1.0.24) (2024-07-02)
+
+
+### Bug Fixes
+
+* allow `backStackEntry` to be passed directly to `goBack` ([8e59028](https://github.com/nativescript-community/svelte-native/commit/8e590280832934aaf4ff703e865fb9fbc3d94455))
+
+### [1.0.23](https://github.com/nativescript-community/svelte-native/compare/v1.0.21...v1.0.23) (2024-06-26)
+
+
+### Bug Fixes
+
+* dont crash on exit if no root page instance ([7065006](https://github.com/nativescript-community/svelte-native/commit/7065006c05ec9141f0e78fcb9608bce4bb503174))
+* update peer deps ([0f23241](https://github.com/nativescript-community/svelte-native/commit/0f23241888c6ca3fc9a1a802baff367b5c0e4ea0))
 
 ## [1.0.22]
   - fix: dont crash on exit if no root page instance
@@ -181,7 +181,7 @@ All notable changes to this project will be documented in this file. See [standa
   - Resolve [Object object] in listview when using itemTemplateSelector
 
 ## [0.8.5]
-  - Resolve Formatted string reactivity [#166](https://github.com/halfnelson/svelte-native/issues/166)
+  - Resolve Formatted string reactivity [#166](https://github.com/nativescript-community/svelte-native/issues/166)
   - Prevent resolving of log messages when trace is not enabled
 
 ## [0.8.4]
@@ -196,14 +196,14 @@ All notable changes to this project will be documented in this file. See [standa
   - Fix event bubbling with less monkey patching.
   
 ## [0.8.1]
-  - Fix event bubbling [#124](https://github.com/halfnelson/svelte-native/issues/124)
+  - Fix event bubbling [#124](https://github.com/nativescript-community/svelte-native/issues/124)
 
 
 ## [0.8.0]
-  - Fix bug in segmented bar (re)creation closes [#118](https://github.com/halfnelson/svelte-native/issues/118) and [#119](https://github.com/halfnelson/svelte-native/issues/119)
+  - Fix bug in segmented bar (re)creation closes [#118](https://github.com/nativescript-community/svelte-native/issues/118) and [#119](https://github.com/nativescript-community/svelte-native/issues/119)
   - Correctly handle multiple child text nodes
-  - Added ability to override nativescript tags with your own. Closes [#105](https://github.com/halfnelson/svelte-native/issues/105) 
-  - Swap to @nativescript/core from tns-core-modules. Closes [#103](https://github.com/halfnelson/svelte-native/issues/103) 
+  - Added ability to override nativescript tags with your own. Closes [#105](https://github.com/nativescript-community/svelte-native/issues/105) 
+  - Swap to @nativescript/core from tns-core-modules. Closes [#103](https://github.com/nativescript-community/svelte-native/issues/103) 
   - Internal logger now skips evaluation of template strings when logging is disabled
   - Upgrade to nativescript 6.4
   - Upgrade to svelte 3.19.*
@@ -225,7 +225,7 @@ All notable changes to this project will be documented in this file. See [standa
 
 ## [0.7.0]
   - Support for Nativescript 6.2
-  - Clear history when frame direct child change causes a navigation, closes [#96](https://github.com/halfnelson/svelte-native/issues/96)
+  - Clear history when frame direct child change causes a navigation, closes [#96](https://github.com/nativescript-community/svelte-native/issues/96)
 
 ## [0.6.1]
   - Restored custom TabStrip element implementation to work around [problem with tabstripitem view creation](https://github.com/NativeScript/NativeScript/issues/7608)
@@ -257,10 +257,10 @@ into
   
   
 ## [0.5.3]
-  - Add support for itemTemplateSelector closes [#86](https://github.com/halfnelson/svelte-native/issues/86)
+  - Add support for itemTemplateSelector closes [#86](https://github.com/nativescript-community/svelte-native/issues/86)
 
 ## [0.5.2]
-  - Fix frame not found by Id [#82](https://github.com/halfnelson/svelte-native/issues/82)
+  - Fix frame not found by Id [#82](https://github.com/nativescript-community/svelte-native/issues/82)
 
 ## [0.5.1]
   - Fix animations when using latest svelte

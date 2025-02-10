@@ -100,13 +100,13 @@ ns run android
 <div class="examples">
 	
 
-	<Example imageUrl="https://raw.githubusercontent.com/halfnelson/svelte-native-grocery/master/nativescript-svelte-grocery.gif">
+	<Example imageUrl="https://raw.githubusercontent.com/nativescript-community/svelte-native-grocery/master/nativescript-svelte-grocery.gif">
 		<h2>Svelte Native Grocery</h2>
 		<p>
 			Grocery app example. Manage and sync grocery items.
 		
 		</p>
-			<a href="https://github.com/halfnelson/svelte-native-grocery" class="github-link">Repository</a>
+			<a href="https://github.com/nativescript-community/svelte-native-grocery" class="github-link">Repository</a>
 	</Example>
 
 	<Example imageUrl="https://raw.githubusercontent.com/halfnelson/svelte-native-realworld/master/nativescript-svelte-realworld.gif">

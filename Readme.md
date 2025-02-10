@@ -22,7 +22,7 @@ Svelte-Native includes Svelte specific integrations such as
 While Svelte Native is feature complete, there are some items outstanding to bring it to the level of other Nativescript library integrations
 
  - [x] At least 1 emoji in readme.md :+1:
- - [ ] More Tests 😳 [#54](https://github.com/halfnelson/svelte-native/issues/54)
+ - [ ] More Tests 😳 [#54](https://github.com/nativescript-community/svelte-native/issues/54)
  
 
 ## Installation

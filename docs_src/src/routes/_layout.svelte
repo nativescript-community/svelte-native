@@ -33,7 +33,7 @@
 			<Icon name="message-square"/>
 		</NavItem>
 
-		<NavItem external="https://github.com/halfnelson/svelte-native" title="GitHub Repo">
+		<NavItem external="https://github.com/nativescript-community/svelte-native" title="GitHub Repo">
 			<Icon name="github"/>
 		</NavItem>
 	</Nav>

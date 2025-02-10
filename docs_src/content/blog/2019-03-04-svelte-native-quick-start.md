@@ -31,7 +31,7 @@ Svelte-Native really is native, so it needs a mobile device to run. The build se
 
 ## Create a new Svelte-Native app
 
-The easiest way to get started is to use the [latest template app](https://github.com/halfnelson/svelte-native-template):
+The easiest way to get started is to use the [latest template app](https://github.com/nativescript-community/svelte-native-template):
 
 ```bash
 $ ns create myapp --svelte
@@ -54,6 +54,6 @@ You will need to scan the ascii art QR code using the "Playground" app you insta
 
 ## Draw the rest of the owl
 
-You can check out the [Grocery App Example](https://github.com/halfnelson/svelte-native-grocery) for an example of a larger application. 
+You can check out the [Grocery App Example](https://github.com/nativescript-community/svelte-native-grocery) for an example of a larger application. 
 
 Jump into the [Docs](/docs) or follow the [Tutorial](/tutorial) to get started.
