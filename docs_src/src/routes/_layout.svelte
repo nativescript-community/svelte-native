@@ -27,7 +27,7 @@
 		<NavItem segment="blog">Blog</NavItem>
 		
 		<NavItem external="https://svelte.dev">Svelte</NavItem>
-		<NavItem external="https://docs.nativescript.org/start/introduction">NativeScript</NavItem>
+		<NavItem external="https://docs.nativescript.org/">NativeScript</NavItem>
 
 		<NavItem external="chat" title="Discord Chat">
 			<Icon name="message-square"/>
