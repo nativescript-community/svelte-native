@@ -114,7 +114,7 @@ export default class NativeElementNode<T> extends ElementNode {
         if (!propName) return;
 
         //Special case Array and Observable Array keys
-        if (!this.propConfig[propName] || this.propConfig[propName] == NativeElementPropType.Value) {
+        if (this.propConfig[propName] === undefined || this.propConfig[propName] === NativeElementPropType.Value) {
             this.setAttribute(propName, childNode);
             return;
         }

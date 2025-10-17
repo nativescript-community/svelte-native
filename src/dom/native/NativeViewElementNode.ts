@@ -202,7 +202,7 @@ export default class NativeViewElementNode<T extends ViewBase> extends NativeEle
 
         //if we are a property value, then skip adding to parent
         let propName = childNode.propAttribute;
-        if (propName && this.propConfig[propName] && this.propConfig[propName] !== NativeElementPropType.Value) return;
+        if (propName && this.propConfig[propName] !== undefined && this.propConfig[propName] !== NativeElementPropType.Value) return;
 
         const parentView = this.nativeView
         const childView = childNode.nativeView

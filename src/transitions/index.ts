@@ -1,4 +1,4 @@
-import { CubicBezierAnimationCurve, Pair } from "@nativescript/core/ui/animation";
+import { CubicBezierAnimationCurve, Pair } from "@nativescript/core/ui/animation/animation-interfaces";
 import { CoreTypes, Trace } from "@nativescript/core";
 import { Animation, AnimationDefinition, Color, View } from "@nativescript/core";
 
