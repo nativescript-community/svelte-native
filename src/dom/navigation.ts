@@ -151,7 +151,7 @@ export interface ShowModalOptions<T> {
 export function showModal<T, U>(modalOptions: ShowModalOptions<U>): Promise<T> {
     let { page, props = {}, target, ...options } = modalOptions;
 
-    let modalLauncher = resolveTarget(target) || Application.getRootView();
+    let modalLauncher = resolveTarget(target) || Frame.topmost().currentPage || Application.getRootView();
 
     let componentInstanceInfo = resolveComponentElement(page, props);
     let modalView: ViewBase = componentInstanceInfo.element.nativeView;
