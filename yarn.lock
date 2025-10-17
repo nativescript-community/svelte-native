@@ -148,16 +148,16 @@ __metadata:
   resolution: "@nativescript-community/svelte-native@workspace:."
   dependencies:
     "@nativescript/core": "npm:8.9.9"
-    "@nativescript/types": "npm:8.9.1"
+    "@nativescript/types": "npm:8.7.0"
     "@rollup/plugin-node-resolve": "npm:15.2.3"
     "@rollup/plugin-typescript": "npm:11.1.6"
     "@types/node": "npm:20.14.9"
     glob: "npm:10.3.10"
     rimraf: "npm:2.7.1"
     rollup: "npm:4.18.0"
-    rollup-plugin-svelte: "npm:^7.2.2"
+    rollup-plugin-svelte: "npm:7.2.2"
     standard-version: "npm:9.5.0"
-    svelte: "npm:4.2.20"
+    svelte: "npm:4.2.18"
     tslib: "npm:2.8.1"
     typescript: "npm:5.9.3"
   peerDependencies:
@@ -195,27 +195,27 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nativescript/types-android@npm:~8.9.0":
-  version: 8.9.0
-  resolution: "@nativescript/types-android@npm:8.9.0"
-  checksum: 10/c006be3f0a8fa6714bacd868c3dac9ea85e707f5a439631ad7d773492e68ce5d993213e59e205b3c62f07ef796eaadb1260d09271f451c5370104b71d4915949
+"@nativescript/types-android@npm:8.7.0":
+  version: 8.7.0
+  resolution: "@nativescript/types-android@npm:8.7.0"
+  checksum: 10/44b1c7702f48d800fa354287afc52402958e8fd47460141a7df91c967a092f6b4e04f396cd80ae6cf85aa038270e4a0adf7cf4733460b8463a22eaaf6ca50741
   languageName: node
   linkType: hard
 
-"@nativescript/types-ios@npm:~8.9.0":
-  version: 8.9.1
-  resolution: "@nativescript/types-ios@npm:8.9.1"
-  checksum: 10/fd8129919a48e65250521516bc18b3201df4f7be0e49be77eb54ed6729088142eb7dcdff6d0d41f57b782b23342d0ffe73152b1dfea06e28a61a62d4dd468514
+"@nativescript/types-ios@npm:8.7.0":
+  version: 8.7.0
+  resolution: "@nativescript/types-ios@npm:8.7.0"
+  checksum: 10/d1e7eaf4da409b24a252862ffdd0fca2b2270b37ccf0ea42b805fb391a9ea3b08c22e5b70d223e86f7158248f2e0425ddee0db7a0f55024b7bc3f0093f6ce7a8
   languageName: node
   linkType: hard
 
-"@nativescript/types@npm:8.9.1":
-  version: 8.9.1
-  resolution: "@nativescript/types@npm:8.9.1"
+"@nativescript/types@npm:8.7.0":
+  version: 8.7.0
+  resolution: "@nativescript/types@npm:8.7.0"
   dependencies:
-    "@nativescript/types-android": "npm:~8.9.0"
-    "@nativescript/types-ios": "npm:~8.9.0"
-  checksum: 10/cad6dbb69ffbf544df0a865b34647494e7b44f66ddd8d880f934d576272170f083f6380fb0038104a64b43b558476d1345926e062fbed2926d2cf72c5a2c5188
+    "@nativescript/types-android": "npm:8.7.0"
+    "@nativescript/types-ios": "npm:8.7.0"
+  checksum: 10/a7f1452564d424d653dd31fe51a9ff42a1ed9f216599d20b9b9fa019a0990d9385cf4926f49f824dd5661b80dfd96ab49afa319a3e71a643d6f5f847affe4ee4
   languageName: node
   linkType: hard
 
@@ -2492,16 +2492,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rollup-plugin-svelte@npm:^7.2.2":
-  version: 7.2.3
-  resolution: "rollup-plugin-svelte@npm:7.2.3"
+"rollup-plugin-svelte@npm:7.2.2":
+  version: 7.2.2
+  resolution: "rollup-plugin-svelte@npm:7.2.2"
   dependencies:
     "@rollup/pluginutils": "npm:^4.1.0"
     resolve.exports: "npm:^2.0.0"
   peerDependencies:
     rollup: ">=2.0.0"
     svelte: ">=3.5.0"
-  checksum: 10/8e3dc22ab6747290d11f122f609db67ee504152977aaae9266caebb91b2537746b89e1f9cd0baa9f0ea1f1700941279d2fa378bc51f82e1223a1b57c4a3baab8
+  checksum: 10/7fd7077164c1004c98ed11a0697b17495673366afba083fa7bf2c106162b7e01128f773870f67bfda4eb49b53d4d6414bca97263c7c69c0f353d5746c662129a
   languageName: node
   linkType: hard
 
@@ -2863,9 +2863,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"svelte@npm:4.2.20":
-  version: 4.2.20
-  resolution: "svelte@npm:4.2.20"
+"svelte@npm:4.2.18":
+  version: 4.2.18
+  resolution: "svelte@npm:4.2.18"
   dependencies:
     "@ampproject/remapping": "npm:^2.2.1"
     "@jridgewell/sourcemap-codec": "npm:^1.4.15"
@@ -2881,7 +2881,7 @@ __metadata:
     locate-character: "npm:^3.0.0"
     magic-string: "npm:^0.30.4"
     periscopic: "npm:^3.1.0"
-  checksum: 10/88d1ce0d604188e26027a22a3402d2d786b83807a1114b8ac4d44ff35abf11b729872e0bea397bfd5b16a927519467fbf1d307c1daa1d339547aefbd7be5af67
+  checksum: 10/281790609d4ad86b93131858e5b94bef6faa9959018198ea78d9fff3cdc367294fd85e5dc43ccfc7e88e8110dc60bce664ff7f1a72a04624e7487f2f5444bd6d
   languageName: node
   linkType: hard
 
