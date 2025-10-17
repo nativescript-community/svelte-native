@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.30](https://github.com/nativescript-community/svelte-native/compare/v1.0.29...v1.0.30) (2025-10-17)
+
+
+### Bug Fixes
+
+* showModal should default parent to top current frame page before rootView ([76c630a](https://github.com/nativescript-community/svelte-native/commit/76c630a333295b03cee05c761a7fc1a75aa3440c))
+
 ### [1.0.29](https://github.com/nativescript-community/svelte-native/compare/v1.0.28...v1.0.29) (2024-11-07)
 
 
