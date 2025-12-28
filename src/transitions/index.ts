@@ -102,12 +102,12 @@ export function asSvelteTransition(node: NativeViewElementNode<View>, delay: num
                         const value = animDef[k];
                         switch(k) {
                             case 'scale':
-                            view.scaleX = value.scale.x;
-                            view.scaleY = value.scale.y;
+                            view.scaleX = value.x;
+                            view.scaleY = value.y;
                             break;
                             case 'translate':
-                            view.translateX = value.translate.x;
-                            view.translateY = value.translate.y;
+                            view.translateX = value.x;
+                            view.translateY = value.y;
                             break;
                             default:
                             //@ts-ignore
@@ -120,21 +120,23 @@ export function asSvelteTransition(node: NativeViewElementNode<View>, delay: num
         }
         //our first frame! are we an in or out
         if (direction == AnimationDirection.Unknown) {
-            // In Svelte 4, both intro and outro may start with t=0, u=1
-            // We try to detect based on element state:
-            // - If element is already visible (opacity > 0), likely outro
-            // - If element is invisible (opacity = 0), likely intro
+            // In Svelte 4, both intro and outro may start with t=0
+            // We try to detect based on multiple element states:
+            // - Check if element is already visible (opacity > 0 or isLoaded)
+            // - Check if element has been laid out (has dimensions)
             // Fall back to t=0 detection for Svelte 3 compatibility
             
             const currentOpacity = node.nativeView.opacity;
-            const isLikelyOutro = currentOpacity > 0 && t === 0;
+            const isLoaded = node.nativeView.isLoaded;
+            const hasSize = node.nativeView.getMeasuredWidth() > 0 || node.nativeView.getMeasuredHeight() > 0;
+            const isLikelyOutro = (currentOpacity > 0 || isLoaded || hasSize) && t === 0;
             
             if (Trace.isEnabled()) {
-                Trace.write(`[TRANSITION] First tick: t=${t}, u=${u}, opacity=${currentOpacity}, isLikelyOutro=${isLikelyOutro}`, 'SvelteNative');
+                Trace.write(`[TRANSITION] First tick: t=${t}, u=${u}, opacity=${currentOpacity}, isLoaded=${isLoaded}, hasSize=${hasSize}, isLikelyOutro=${isLikelyOutro}`, 'SvelteNative');
             }
             
             if (t === 0 && !isLikelyOutro) {
-                // Intro: t=0 and element not visible
+                // Intro: t=0 and element not visible/loaded
                 if (Trace.isEnabled()) {
                     Trace.write(`[TRANSITION] Detected INTRO`, 'SvelteNative');
                 }
@@ -142,7 +144,7 @@ export function asSvelteTransition(node: NativeViewElementNode<View>, delay: num
                 direction = AnimationDirection.In
                 last_t = 0;
             } else {
-                // Outro: either t!=0 (Svelte 3) or t=0 but element visible (Svelte 4 outro)
+                // Outro: either t!=0 (Svelte 3) or t=0 but element visible/loaded (Svelte 4 outro)
                 if (Trace.isEnabled()) {
                     Trace.write(`[TRANSITION] Detected OUTRO`, 'SvelteNative');
                 }
