@@ -24,6 +24,9 @@ export function asSvelteTransition(node: NativeViewElementNode<View>, delay: num
     let svelteAnim: any = {
         delay: delay,
         duration: duration,
+        // In Svelte 4, we need to provide a css function (even if it returns nothing)
+        // to indicate that we're handling the animation imperatively via tick
+        css: () => ''
     }
 
     let svelteCurve: CubicBezier;
@@ -72,10 +75,11 @@ export function asSvelteTransition(node: NativeViewElementNode<View>, delay: num
 
 
     // we note the following svelte behaviour:
-    // "in" animations always get an explicit tick(0, 1) even before any delay.
-    // "out" animations have no such quality, therefore we can expect that if we have not been initialized, and get a t=0 we are an Intro
+    // Svelte 3: "in" animations always get an explicit tick(0) even before any delay, "out" animations don't
+    // Svelte 4: "in" animations get tick(0, 1) first, "out" animations get tick(1, 0) first
+    // The second parameter u = 1 - t helps distinguish between in and out transitions
 
-    svelteAnim.tick = (t: number) => {
+    svelteAnim.tick = (t: number, u: number = 1 - t) => {
         //when you cancel an animation, it appears to set the values back to the start. we use this to reapply them at the given time.
         function applyAnimAtTime(time: number) {
             const view  = node.nativeView;
@@ -108,8 +112,11 @@ export function asSvelteTransition(node: NativeViewElementNode<View>, delay: num
 
         //our first frame! are we an in or out
         if (direction == AnimationDirection.Unknown) {
-            //intro: do an initialize
-            if (t === 0) {
+            // In Svelte 4, intro transitions get an initial tick(0, 1) call
+            // Out transitions start with tick(1, 0) call
+            // We detect direction based on initial t value
+            if (t === 0 || (t < 0.5 && u > 0.5)) {
+                // Intro transition
                 applyAnimAtTime(0);
                 direction = AnimationDirection.In
                 last_t = 0;
@@ -117,7 +124,7 @@ export function asSvelteTransition(node: NativeViewElementNode<View>, delay: num
                 //don't start our full animation yet since this is just the init frame, and there will be a delay. so wait for next frame
                 // return;
             } else {
-                //we must be an outro since all intros get a t==0
+                // Outro transition (t starts at 1 or > 0.5)
                 //  console.log("reverse animation detected!", node);
                 direction = AnimationDirection.Out
                 last_t = t;
