@@ -78,7 +78,9 @@ export function asSvelteTransition(node: NativeViewElementNode<View>, delay: num
     // The key insight: for Svelte 4 "out" transitions, we must use u instead of t
 
     svelteAnim.tick = (t: number, u: number = 1 - t) => {
-        console.log(`[TRANSITION] tick called: t=${t}, u=${u}, direction=${AnimationDirection[direction]}, last_t=${last_t}`, node.tagName);
+        if (Trace.isEnabled()) {
+            Trace.write(`[TRANSITION] tick: t=${t}, u=${u}, dir=${AnimationDirection[direction]}, last_t=${last_t} on ${node.tagName}`, 'SvelteNative');
+        }
         //when you cancel an animation, it appears to set the values back to the start. we use this to reapply them at the given time.
         function applyAnimAtTime(time: number) {
             const view  = node.nativeView;
@@ -153,7 +155,9 @@ export function asSvelteTransition(node: NativeViewElementNode<View>, delay: num
                 return;
             }
             let animProps = nativeAnimationProps(target_t);
-            console.log(`[TRANSITION] Creating animation: direction=${AnimationDirection[direction]}, t=${t}, u=${u}, target_t=${target_t}, duration=${duration}`);
+            if (Trace.isEnabled()) {
+                Trace.write(`[TRANSITION] Creating anim: dir=${AnimationDirection[direction]}, t=${t}, u=${u}, target=${target_t}, dur=${duration}`, 'SvelteNative');
+            }
             let nsAnimation: AnimationDefinition = { ...animProps }
             nsAnimation.delay = 0;
             if (direction == AnimationDirection.Out) {
@@ -165,7 +169,9 @@ export function asSvelteTransition(node: NativeViewElementNode<View>, delay: num
                 let finalCurve = normalizeCurve(reverseCurve(forwardCurve));
                 nsAnimation.curve = CoreTypes.AnimationCurve.cubicBezier(finalCurve.x1, finalCurve.y1, finalCurve.x2, finalCurve.y2);
                 nsAnimation.duration = effectiveT * duration;
-                console.log(`[TRANSITION] Outro animation: effectiveT=${effectiveT}, nsAnimation.duration=${nsAnimation.duration}`);
+                if (Trace.isEnabled()) {
+                    Trace.write(`[TRANSITION] Outro: effectiveT=${effectiveT}, duration=${nsAnimation.duration}`, 'SvelteNative');
+                }
             } else {
                 //we might be starting from halfway (intro->outro-intro again)
                 let forwardCurve = t == 0 ? svelteCurve : partialCurveFrom(svelteCurve, t, 1)
