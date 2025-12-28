@@ -1,7 +1,7 @@
 <svelte:options accessors={true}/>
 
 <script>
-  import { Template } from "svelte-native/components";
+  import { Template } from "@nativescript-community/svelte-native/components";
   export let test_subject;
 </script>
 

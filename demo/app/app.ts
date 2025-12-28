@@ -1,5 +1,5 @@
-import { svelteNativeNoFrame } from "svelte-native";
-import RadSideDrawerElement from "svelte-native-nativescript-ui/sidedrawer"
+import { svelteNativeNoFrame } from "@nativescript-community/svelte-native";
+import RadSideDrawerElement from "@nativescript-community/svelte-native-nativescript-ui/sidedrawer"
 
 RadSideDrawerElement.register();
 

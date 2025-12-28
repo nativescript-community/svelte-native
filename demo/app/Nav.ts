@@ -1,6 +1,6 @@
-import { navigate } from 'svelte-native'
+import { navigate } from '@nativescript-community/svelte-native'
 import { writable } from 'svelte/store'
-import RadSideDrawerElement from 'svelte-native-nativescript-ui/sidedrawer';
+import RadSideDrawerElement from '@nativescript-community/svelte-native-nativescript-ui/sidedrawer';
 import { Trace } from '@nativescript/core'
 
 

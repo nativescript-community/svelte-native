@@ -1,5 +1,5 @@
-import { createElement } from 'svelte-native/dom'
-import { ViewNode } from 'svelte-native/dom';
+import { createElement } from '@nativescript-community/svelte-native/dom'
+import { ViewNode } from '@nativescript-community/svelte-native/dom';
 import PropertyNodeHarness from './PropertyNodeHarness.svelte'
 
 describe('PropertyNode', function () {

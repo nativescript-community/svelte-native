@@ -1,4 +1,4 @@
-import { createElement, NativeElementNode, NativeViewElementNode } from 'svelte-native/dom'
+import { createElement, NativeElementNode, NativeViewElementNode } from '@nativescript-community/svelte-native/dom'
 import NativeElementHarness from './NativeElementHarness.svelte'
 import MountParent from './MountParent.svelte'
 import MountChild from './MountChild.svelte'

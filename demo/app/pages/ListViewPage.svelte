@@ -46,7 +46,7 @@
 <script>
     import Header from '../Header.svelte'
     import { onMount } from 'svelte'
-    import { Template } from 'svelte-native/components'
+    import { Template } from '@nativescript-community/svelte-native/components'
     import { ObservableArray } from '@nativescript/core/data/observable-array'
 
     let images = [
