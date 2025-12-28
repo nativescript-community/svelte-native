@@ -34,7 +34,7 @@ function installGlobalShims(): SvelteNativeDocument {
     window.window = global;
     window.document = new SvelteNativeDocument();
 
-    if (__SVELTE_USE_REQUESTANIMATIONFRAME_OVERRIDE__ !== false) {
+    if (global.__SVELTE_USE_REQUESTANIMATIONFRAME_OVERRIDE__ !== false) {
         // we still need this as of N 9 as the android runtime does not return the same kind of values
         // for window.performance.now() and requestAnimationFrame value. So they are not comparable
         Object.defineProperty(global, 'requestAnimationFrame', {

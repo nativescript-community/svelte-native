@@ -93,12 +93,12 @@ export function asSvelteTransition(node: NativeViewElementNode<View>, delay: num
                         const value = animDef[k];
                         switch(k) {
                             case 'scale':
-                            view.scaleX = value.scale.x;
-                            view.scaleY = value.scale.y;
+                            view.scaleX = value.x;
+                            view.scaleY = value.y;
                             break;
                             case 'translate':
-                            view.translateX = value.translate.x;
-                            view.translateY = value.translate.y;
+                            view.translateX = value.x;
+                            view.translateY = value.y;
                             break;
                             default:
                             //@ts-ignore
