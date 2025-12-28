@@ -20,17 +20,13 @@ export interface NativeAnimationDefinition {
 
 
 export function asSvelteTransition(node: NativeViewElementNode<View>, delay: number = 0, duration: number = 300, curve: string | CubicBezierAnimationCurve = CoreTypes.AnimationCurve.linear, nativeAnimationProps: (t: number) => NativeAnimationDefinition, applyNativeAnimationProps?: (view:View, def:NativeAnimationDefinition) => void) {
-    if (Trace.isEnabled()) {
-        Trace.write(`[TRANSITION] asSvelteTransition called: delay=${delay}, duration=${duration}`, 'SvelteNative');
-    }
-    
+
     let svelteAnim: any = {
         delay: delay,
-        duration: duration
-    }
-    
-    if (Trace.isEnabled()) {
-        Trace.write(`[TRANSITION] Returning transition object with delay=${svelteAnim.delay}, duration=${svelteAnim.duration}`, 'SvelteNative');
+        duration: duration,
+        // In Svelte 4, we need to provide a css function (even if it returns nothing)
+        // to indicate that we're handling the animation imperatively via tick
+        // css: () => ''
     }
 
     let svelteCurve: CubicBezier;
@@ -79,16 +75,11 @@ export function asSvelteTransition(node: NativeViewElementNode<View>, delay: num
 
 
     // we note the following svelte behaviour:
-    // Svelte 3: "in" animations get tick(t) with t going 0->1, "out" animations get t going 1->0
-    // Svelte 4: BOTH "in" and "out" get tick(t, u) with t going 0->1
-    //   - For "in": element visibility matches t (0->1)
-    //   - For "out": element visibility matches u=1-t (1->0)
-    // The key insight: for Svelte 4 "out" transitions, we must use u instead of t
+    // Svelte 3: "in" animations always get an explicit tick(0) even before any delay, "out" animations don't
+    // Svelte 4: "in" animations get tick(0, 1) first, "out" animations get tick(1, 0) first
+    // The second parameter u = 1 - t helps distinguish between in and out transitions
 
     svelteAnim.tick = (t: number, u: number = 1 - t) => {
-        if (Trace.isEnabled()) {
-            Trace.write(`[TRANSITION] tick: t=${t}, u=${u}, dir=${AnimationDirection[direction]}, last_t=${last_t} on ${node.tagName}`, 'SvelteNative');
-        }
         //when you cancel an animation, it appears to set the values back to the start. we use this to reapply them at the given time.
         function applyAnimAtTime(time: number) {
             const view  = node.nativeView;
@@ -102,12 +93,12 @@ export function asSvelteTransition(node: NativeViewElementNode<View>, delay: num
                         const value = animDef[k];
                         switch(k) {
                             case 'scale':
-                            view.scaleX = value.x;
-                            view.scaleY = value.y;
+                            view.scaleX = value.scale.x;
+                            view.scaleY = value.scale.y;
                             break;
                             case 'translate':
-                            view.translateX = value.x;
-                            view.translateY = value.y;
+                            view.translateX = value.translate.x;
+                            view.translateY = value.translate.y;
                             break;
                             default:
                             //@ts-ignore
@@ -118,36 +109,23 @@ export function asSvelteTransition(node: NativeViewElementNode<View>, delay: num
                 }
             });
         }
+
         //our first frame! are we an in or out
         if (direction == AnimationDirection.Unknown) {
-            // In Svelte 4, both intro and outro may start with t=0
-            // We try to detect based on multiple element states:
-            // - Check if element is already visible (opacity > 0 or isLoaded)
-            // - Check if element has been laid out (has dimensions)
-            // Fall back to t=0 detection for Svelte 3 compatibility
-            
-            const currentOpacity = node.nativeView.opacity;
-            const isLoaded = node.nativeView.isLoaded;
-            const hasSize = node.nativeView.getMeasuredWidth() > 0 || node.nativeView.getMeasuredHeight() > 0;
-            const isLikelyOutro = (currentOpacity > 0 || isLoaded || hasSize) && t === 0;
-            
-            if (Trace.isEnabled()) {
-                Trace.write(`[TRANSITION] First tick: t=${t}, u=${u}, opacity=${currentOpacity}, isLoaded=${isLoaded}, hasSize=${hasSize}, isLikelyOutro=${isLikelyOutro}`, 'SvelteNative');
-            }
-            
-            if (t === 0 && !isLikelyOutro) {
-                // Intro: t=0 and element not visible/loaded
-                if (Trace.isEnabled()) {
-                    Trace.write(`[TRANSITION] Detected INTRO`, 'SvelteNative');
-                }
+            // In Svelte 4, intro transitions get an initial tick(0, 1) call
+            // Out transitions start with tick(1, 0) call
+            // We detect direction based on initial t value: < 0.5 means intro, >= 0.5 means outro
+            if (t < 0.5) {
+                // Intro transition
                 applyAnimAtTime(0);
                 direction = AnimationDirection.In
                 last_t = 0;
+                //   console.log("forward animation detected!", node);
+                //don't start our full animation yet since this is just the init frame, and there will be a delay. so wait for next frame
+                // return;
             } else {
-                // Outro: either t!=0 (Svelte 3) or t=0 but element visible/loaded (Svelte 4 outro)
-                if (Trace.isEnabled()) {
-                    Trace.write(`[TRANSITION] Detected OUTRO`, 'SvelteNative');
-                }
+                // Outro transition (t starts at 1 or >= 0.5)
+                //  console.log("reverse animation detected!", node);
                 direction = AnimationDirection.Out
                 last_t = t;
             }
@@ -172,30 +150,18 @@ export function asSvelteTransition(node: NativeViewElementNode<View>, delay: num
             //create a new animation that will cover us from now to either t=duration or t=0
             let target_t = (direction == AnimationDirection.In) ? 1 : 0;
             if (!node.nativeView.nativeViewProtected) {
-                if (Trace.isEnabled()) {
-                    Trace.write(`[TRANSITION] nativeViewProtected is null, applying final state: target_t=${target_t}`, 'SvelteNative');
-                }
                 applyAnimAtTime(target_t);
                 return;
             }
             let animProps = nativeAnimationProps(target_t);
-            if (Trace.isEnabled()) {
-                Trace.write(`[TRANSITION] Creating anim: dir=${AnimationDirection[direction]}, t=${t}, u=${u}, target=${target_t}, dur=${duration}`, 'SvelteNative');
-            }
             let nsAnimation: AnimationDefinition = { ...animProps }
             nsAnimation.delay = 0;
             if (direction == AnimationDirection.Out) {
                 //we need to play in reverse, and we might not be playing the whole thing
-                // In Svelte 4, t goes 0->1 for outro, but element visibility is u (1->0)
-                // So we use u for duration calculation instead of t
-                let effectiveT = u; // Use u for outro to get correct visibility value
-                let forwardCurve = effectiveT == 1 ? svelteCurve : partialCurveFrom(svelteCurve, 0, effectiveT)
+                let forwardCurve = t == 1 ? svelteCurve : partialCurveFrom(svelteCurve, 0, t)
                 let finalCurve = normalizeCurve(reverseCurve(forwardCurve));
                 nsAnimation.curve = CoreTypes.AnimationCurve.cubicBezier(finalCurve.x1, finalCurve.y1, finalCurve.x2, finalCurve.y2);
-                nsAnimation.duration = effectiveT * duration;
-                if (Trace.isEnabled()) {
-                    Trace.write(`[TRANSITION] Outro: effectiveT=${effectiveT}, duration=${nsAnimation.duration}`, 'SvelteNative');
-                }
+                nsAnimation.duration = t * duration;
             } else {
                 //we might be starting from halfway (intro->outro-intro again)
                 let forwardCurve = t == 0 ? svelteCurve : partialCurveFrom(svelteCurve, t, 1)
@@ -205,15 +171,7 @@ export function asSvelteTransition(node: NativeViewElementNode<View>, delay: num
             }
             //console.log("animation created", t, (direction == AnimationDirection.In) ? "Intro" : "Outro", nsAnimation, node);
             // kick it off
-            try {
-                animation = node.nativeView.createAnimation(nsAnimation);
-            } catch (error) {
-                if (Trace.isEnabled()) {
-                    Trace.error(`[TRANSITION] Error creating animation: ${error}`);
-                }
-                return; // Can't create animation, exit early
-            }
-            
+            animation = node.nativeView.createAnimation(nsAnimation);
             function animateBlock() {
                 try {
                     animation.play();
