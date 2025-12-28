@@ -3,10 +3,10 @@
   "license": "SEE LICENSE IN <your-license-filename>",
   "repository": "<fill-your-repository-here>",
   "dependencies": {
+    "@nativescript-community/svelte-native-nativescript-ui": "1.0.0",
     "@nativescript/core": "~8.9.9",
     "@nativescript/theme": "^3.1.0",
-    "nativescript-ui-sidedrawer": "^15.2.3",
-    "svelte-native-nativescript-ui": "1.0.0"
+    "nativescript-ui-sidedrawer": "^15.2.3"
   },
   "devDependencies": {
     "@nativescript-community/svelte-native": "file:../dist",

@@ -18,3 +18,5 @@ declare module "*.svelte" {
         intro?: boolean;
     }
 }
+
+declare const __SVELTE_USE_REQUESTANIMATIONFRAME_OVERRIDE__: boolean;

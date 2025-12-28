@@ -30,6 +30,7 @@
         "app/**/*"
     ],
     "exclude": [
+        "app/tests/",
         "node_modules",
         "platforms"
     ]
