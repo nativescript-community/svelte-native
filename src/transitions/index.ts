@@ -110,15 +110,12 @@ export function asSvelteTransition(node: NativeViewElementNode<View>, delay: num
         }
         //our first frame! are we an in or out
         if (direction == AnimationDirection.Unknown) {
-            // In Svelte 4, both intro and outro start with t=0
-            // However, intro has the node starting invisible (needs to appear)
-            // and outro has the node starting visible (needs to disappear)
-            // We detect this by checking if we get multiple ticks:
-            // - Intro: t goes 0 -> 1 (so last_t < t on second tick)
-            // - Outro: In Svelte 4, t also goes 0 -> 1, but we use u (1-t) for visibility
-            // For now, assume intro if t=0, outro detection happens on direction change
-            if (t === 0) {
-                // Could be intro or outro, assume intro initially
+            // In Svelte 4:
+            // - Intro: first tick is (t=0, u=1)
+            // - Outro: first tick is (t=1, u=0)
+            // We use u to detect: if u is close to 1, it's intro; if close to 0, it's outro
+            if (u > 0.5) {
+                // Intro transition (u=1 means element is invisible, needs to appear)
                 applyAnimAtTime(0);
                 direction = AnimationDirection.In
                 last_t = 0;
@@ -126,7 +123,7 @@ export function asSvelteTransition(node: NativeViewElementNode<View>, delay: num
                 //don't start our full animation yet since this is just the init frame, and there will be a delay. so wait for next frame
                 // return;
             } else {
-                // Not t=0, so must be outro (Svelte 3 behavior or direction change)
+                // Outro transition (u=0 means element is visible, needs to disappear)
                 //  console.log("reverse animation detected!", node);
                 direction = AnimationDirection.Out
                 last_t = t;
