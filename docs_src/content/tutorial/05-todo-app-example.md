@@ -97,7 +97,7 @@ Replace the contents of the first `<tabViewItem>` with:
 and to the bottom of the file add a script tag:
 ```html
 <script>
-    import { Template } from 'svelte-native/components'
+    import { Template } from '@nativescript-community/svelte-native/components'
 
     let todos = []
     let textFieldValue = ""

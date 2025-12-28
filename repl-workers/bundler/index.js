@@ -271,7 +271,7 @@ async function bundle({ uid, components }) {
 		name: 'app',
 		type: 'js',
 		source: `
-import { navigate, svelteNative, initializeDom } from "svelte-native"
+import { navigate, svelteNative, initializeDom } from "@nativescript-community/svelte-native"
 import App from "./App.svelte"
 
 export function start() {

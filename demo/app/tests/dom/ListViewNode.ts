@@ -1,4 +1,4 @@
-import { createElement, NativeViewElementNode } from 'svelte-native/dom'
+import { createElement, NativeViewElementNode } from '@nativescript-community/svelte-native/dom'
 import { ListView } from '@nativescript/core/ui/list-view'
 
 import ListViewMultiTemplate from './ListViewMultiTemplate.svelte'

@@ -62,7 +62,7 @@ Main.ts
 ```js
 import App from './components/App.svelte';
 
-import { svelteNative } from 'svelte-native'
+import { svelteNative } from '@nativescript-community/svelte-native'
 
 svelteNative(App, {msg: "Hi from launcher"});
 ```

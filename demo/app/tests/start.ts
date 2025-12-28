@@ -1,4 +1,4 @@
-import { initializeDom, DomTraceCategory } from "svelte-native";
+import { initializeDom, DomTraceCategory } from "@nativescript-community/svelte-native";
 
 
 import { Trace as trace } from "@nativescript/core"

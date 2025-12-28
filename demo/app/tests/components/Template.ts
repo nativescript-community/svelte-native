@@ -1,8 +1,8 @@
-import { Template } from "svelte-native/components"
+import { Template } from "@nativescript-community/svelte-native/components"
 import TemplateHarness from './TemplateHarness.svelte'
-import { createElement } from "svelte-native/dom";
+import { createElement } from "@nativescript-community/svelte-native/dom";
 import { Label } from "@nativescript/core/ui";
-import { NativeViewElementNode } from "svelte-native/dom";
+import { NativeViewElementNode } from "@nativescript-community/svelte-native/dom";
 
 describe('Template', function () {
 
