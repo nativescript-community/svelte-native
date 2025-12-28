@@ -1,0 +1,4 @@
+ext {
+    compileSdk = 36
+    targetSdk = 36
+}

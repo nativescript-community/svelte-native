@@ -9,6 +9,7 @@
                      <label text="Text Nodes" class:current={$current_page == TextNodePage} padding="10" on:tap="{() => gotoPage(TextNodePage)}" />
                      <label text="SegmentedBar" class:current={$current_page == SegmentedBarPage} padding="10" on:tap="{() => gotoPage(SegmentedBarPage)}" />
                      <label text="Formatted String" class:current={$current_page == FormattedStringPage} padding="10" on:tap="{() => gotoPage(FormattedStringPage)}" />
+                     <label text="Transitions" class:current={$current_page == TransitionsPage} padding="10" on:tap="{() => gotoPage(TransitionsPage)}" />
                 </stackLayout>
             </scrollView>
         </gridLayout>
@@ -25,6 +26,7 @@
     import TextNodePage from './pages/TextNodePage.svelte'
     import SegmentedBarPage from './pages/SegmentedBarPage.svelte'
     import FormattedStringPage from './pages/FormattedStringPage.svelte'
+    import TransitionsPage from './pages/TransitionsPage.svelte'
 
     function gotoPage(page) {
         drawer.closeDrawer();
