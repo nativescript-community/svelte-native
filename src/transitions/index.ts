@@ -20,13 +20,12 @@ export interface NativeAnimationDefinition {
 
 
 export function asSvelteTransition(node: NativeViewElementNode<View>, delay: number = 0, duration: number = 300, curve: string | CubicBezierAnimationCurve = CoreTypes.AnimationCurve.linear, nativeAnimationProps: (t: number) => NativeAnimationDefinition, applyNativeAnimationProps?: (view:View, def:NativeAnimationDefinition) => void) {
-
     let svelteAnim: any = {
         delay: delay,
         duration: duration,
         // In Svelte 4, we need to provide a css function (even if it returns nothing)
         // to indicate that we're handling the animation imperatively via tick
-        css: () => ''
+        // css: () => ''
     }
 
     let svelteCurve: CubicBezier;
@@ -109,6 +108,7 @@ export function asSvelteTransition(node: NativeViewElementNode<View>, delay: num
                 }
             });
         }
+    console.log('applyAnimAtTime', t, u, direction)
 
         //our first frame! are we an in or out
         if (direction == AnimationDirection.Unknown) {
@@ -154,6 +154,7 @@ export function asSvelteTransition(node: NativeViewElementNode<View>, delay: num
                 return;
             }
             let animProps = nativeAnimationProps(target_t);
+    console.log('animation', t,target_t, animProps)
             let nsAnimation: AnimationDefinition = { ...animProps }
             nsAnimation.delay = 0;
             if (direction == AnimationDirection.Out) {
