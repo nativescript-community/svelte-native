@@ -20,9 +20,17 @@ export interface NativeAnimationDefinition {
 
 
 export function asSvelteTransition(node: NativeViewElementNode<View>, delay: number = 0, duration: number = 300, curve: string | CubicBezierAnimationCurve = CoreTypes.AnimationCurve.linear, nativeAnimationProps: (t: number) => NativeAnimationDefinition, applyNativeAnimationProps?: (view:View, def:NativeAnimationDefinition) => void) {
+    if (Trace.isEnabled()) {
+        Trace.write(`[TRANSITION] asSvelteTransition called: delay=${delay}, duration=${duration}`, 'SvelteNative');
+    }
+    
     let svelteAnim: any = {
         delay: delay,
         duration: duration
+    }
+    
+    if (Trace.isEnabled()) {
+        Trace.write(`[TRANSITION] Returning transition object with delay=${svelteAnim.delay}, duration=${svelteAnim.duration}`, 'SvelteNative');
     }
 
     let svelteCurve: CubicBezier;
@@ -118,6 +126,9 @@ export function asSvelteTransition(node: NativeViewElementNode<View>, delay: num
             // We use u to detect: if u is close to 1, it's intro; if close to 0, it's outro
             if (u > 0.5) {
                 // Intro transition (u=1 means element is invisible, needs to appear)
+                if (Trace.isEnabled()) {
+                    Trace.write(`[TRANSITION] Detected INTRO: u=${u} > 0.5`, 'SvelteNative');
+                }
                 applyAnimAtTime(0);
                 direction = AnimationDirection.In
                 last_t = 0;
@@ -126,6 +137,9 @@ export function asSvelteTransition(node: NativeViewElementNode<View>, delay: num
                 // return;
             } else {
                 // Outro transition (u=0 means element is visible, needs to disappear)
+                if (Trace.isEnabled()) {
+                    Trace.write(`[TRANSITION] Detected OUTRO: u=${u} <= 0.5`, 'SvelteNative');
+                }
                 //  console.log("reverse animation detected!", node);
                 direction = AnimationDirection.Out
                 last_t = t;
@@ -151,6 +165,9 @@ export function asSvelteTransition(node: NativeViewElementNode<View>, delay: num
             //create a new animation that will cover us from now to either t=duration or t=0
             let target_t = (direction == AnimationDirection.In) ? 1 : 0;
             if (!node.nativeView.nativeViewProtected) {
+                if (Trace.isEnabled()) {
+                    Trace.write(`[TRANSITION] nativeViewProtected is null, applying final state: target_t=${target_t}`, 'SvelteNative');
+                }
                 applyAnimAtTime(target_t);
                 return;
             }
@@ -181,7 +198,15 @@ export function asSvelteTransition(node: NativeViewElementNode<View>, delay: num
             }
             //console.log("animation created", t, (direction == AnimationDirection.In) ? "Intro" : "Outro", nsAnimation, node);
             // kick it off
-            animation = node.nativeView.createAnimation(nsAnimation);
+            try {
+                animation = node.nativeView.createAnimation(nsAnimation);
+            } catch (error) {
+                if (Trace.isEnabled()) {
+                    Trace.error(`[TRANSITION] Error creating animation: ${error}`);
+                }
+                return; // Can't create animation, exit early
+            }
+            
             function animateBlock() {
                 try {
                     animation.play();
