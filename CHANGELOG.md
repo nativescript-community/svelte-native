@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.31](https://github.com/nativescript-community/svelte-native/compare/v1.0.30...v1.0.31) (2025-12-28)
+
+
+### Bug Fixes
+
+* transitions not working again ([9768eb8](https://github.com/nativescript-community/svelte-native/commit/9768eb881cb50edb91e559bb459abb4bfc05fdc6))
+
 ### [1.0.30](https://github.com/nativescript-community/svelte-native/compare/v1.0.29...v1.0.30) (2025-10-17)
 
 
