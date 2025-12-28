@@ -114,8 +114,8 @@ export function asSvelteTransition(node: NativeViewElementNode<View>, delay: num
         if (direction == AnimationDirection.Unknown) {
             // In Svelte 4, intro transitions get an initial tick(0, 1) call
             // Out transitions start with tick(1, 0) call
-            // We detect direction based on initial t value
-            if (t === 0 || (t < 0.5 && u > 0.5)) {
+            // We detect direction based on initial t value: < 0.5 means intro, >= 0.5 means outro
+            if (t < 0.5) {
                 // Intro transition
                 applyAnimAtTime(0);
                 direction = AnimationDirection.In
@@ -124,7 +124,7 @@ export function asSvelteTransition(node: NativeViewElementNode<View>, delay: num
                 //don't start our full animation yet since this is just the init frame, and there will be a delay. so wait for next frame
                 // return;
             } else {
-                // Outro transition (t starts at 1 or > 0.5)
+                // Outro transition (t starts at 1 or >= 0.5)
                 //  console.log("reverse animation detected!", node);
                 direction = AnimationDirection.Out
                 last_t = t;
