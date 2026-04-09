@@ -20,11 +20,11 @@
             <label text="Switch" class="text-lg font-bold text-purple-700 mb-2" />
             <gridLayout columns="*, auto" class="mb-2">
                 <label col="0" text="Enable notifications" class="text-base text-gray-700" />
-                <switch col="1" checked={notifications} class="text-purple-700" oncheckedChange={(e) => notifications = e.value} />
+                <switch col="1" class="text-purple-700" oncheckedChange={(e) => notifications = e.object.checked} />
             </gridLayout>
             <gridLayout columns="*, auto">
                 <label col="0" text="Auto-save" class="text-base text-gray-700" />
-                <switch col="1" checked={autoSave} class="text-purple-700" oncheckedChange={(e) => autoSave = e.value} />
+                <switch col="1" class="text-purple-700" oncheckedChange={(e) => autoSave = e.object.checked} />
             </gridLayout>
         </stackLayout>
 
@@ -51,8 +51,8 @@
 
 <script>
     let sliderValue = 50;
-    let notifications = true;
-    let autoSave = true;
+    let notifications = false;
+    let autoSave = false;
     let selectedPriority = 1;
     const priorities = ['Low', 'Medium', 'High'];
 </script>

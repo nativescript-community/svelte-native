@@ -28,7 +28,7 @@
         <!-- Text binding -->
         <label text="Two-Way Binding" class="text-xl font-bold text-purple-800 mb-2" />
         <stackLayout class="bg-gray-100 rounded-xl p-4 mb-6">
-            <textField text={name} hint="Type your name..." class="bg-white rounded-lg p-3 mb-3 text-base border border-gray-300" onblur={(e) => name = e.object.text} />
+            <textField text={name} hint="Type your name..." class="bg-white rounded-lg p-3 mb-3 text-base border border-gray-300" ontextChange={(e) => name = e.object.text} />
             <label class="text-base text-gray-700">
                 <formattedString>
                     <span text="Hello, " class="text-gray-500" />
