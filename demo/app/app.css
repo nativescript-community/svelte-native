@@ -1,16 +1,20 @@
-﻿/*
-In NativeScript, the app.css file is where you place CSS rules that
-you would like to apply to your entire application. Check out
-http://docs.nativescript.org/ui/styling for a full list of the CSS
-selectors and properties you can use to style UI components.
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/*
-In many cases you may want to use the NativeScript core theme instead
-of writing your own CSS rules. For a full list of class names in the theme
-refer to http://docs.nativescript.org/ui/theme. 
-The imported CSS rules must precede all other types of rules.
-*/
-@import '@nativescript/theme/css/core.css';
-@import '@nativescript/theme/css/default.css';
-@import './font-awesome.css';
+/* https://fontawesome.com/icons?d=gallery&m=free */
 
+.far {
+    font-family: "Font Awesome 5 Free", "fa-regular-400";
+    font-weight: 400;
+}
+
+.fas {
+    font-family: "Font Awesome 5 Free", "fa-solid-900";
+    font-weight: 900;
+}
+
+.fab {
+    font-family: "Font Awesome 5 Brands", "fa-brands-400";
+    font-weight: 400;
+}

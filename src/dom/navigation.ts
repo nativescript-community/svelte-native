@@ -4,6 +4,7 @@ import { createElement, DocumentNode, logger as log } from "./basicdom";
 import PageElement from "./native/PageElement";
 import NativeViewElementNode from "./native/NativeViewElementNode";
 import { _rootModalViews } from "@nativescript/core/ui/core/view";
+import renderer from "./renderer";
 
 export type ViewSpec<T extends ViewBase = View> = T | NativeViewElementNode<T>
 export type FrameSpec = Frame | FrameElement | string
@@ -46,11 +47,11 @@ export interface ComponentInstanceInfo<T extends ViewBase = View, U = SvelteComp
     viewInstance: U;
 }
 
-export function resolveComponentElement<T, U extends ViewBase = View>(viewSpec: typeof SvelteComponent<T>, props?: T): ComponentInstanceInfo<U, SvelteComponent<T>> {
+export function resolveComponentElement<T, U extends ViewBase = View>(viewSpec: any, props?: T): ComponentInstanceInfo<U, any> {
     const dummy = createElement('fragment', window.document as unknown as DocumentNode);
-    const viewInstance = new viewSpec({ target: dummy, props });
+    const { component, unmount } = renderer.render(viewSpec, { target: dummy as any, props: props || {} as any });
     const element = dummy.firstElement() as NativeViewElementNode<U>;
-    return { element, viewInstance };
+    return { element, viewInstance: { ...component, $destroy: unmount, unmount } };
 }
 // export function resolveComponentElement<T>(pageSpec: PageSpec<T>, props?: T): ComponentInstanceInfo<T> {
 //     let dummy = createElement('fragment', window.document as unknown as DocumentNode);
@@ -84,7 +85,7 @@ export function navigate<T>(options: NavigationOptions<T>): SvelteComponent<T> {
             // will remove all set `navigatedFrom` while we are enumerating to actually send them
             setTimeout(() => {
                 nativePage.off('navigatedFrom', handler);
-                viewInstance?.$destroy();
+                if (viewInstance?.unmount) viewInstance.unmount();
             }, 0);
         }
     };
@@ -163,7 +164,7 @@ export function showModal<T, U>(modalOptions: ShowModalOptions<U>): Promise<T> {
             if (resolved) return;
             resolved = true;
             try {
-                componentInstanceInfo.viewInstance.$destroy(); //don't let an exception in destroy kill the promise callback
+                componentInstanceInfo.viewInstance.unmount(); //don't let an exception in destroy kill the promise callback
             } finally {
                 resolve(result);
             }
