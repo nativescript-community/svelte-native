@@ -32,7 +32,10 @@
             });
 
             return {
-                // $set: update props by remounting (svelte 5 compatibility shim)
+                // $set: update props by remounting (svelte 5 compatibility shim).
+                // Note: full remounting is needed here because the snippet's props are not
+                // reactive state that can be externally updated. For high-frequency updates,
+                // prefer driving item data through NativeScript's ObservableArray reactivity.
                 $set(newProps) {
                     Object.assign(currentProps, newProps);
                     unmount(activeInstance);

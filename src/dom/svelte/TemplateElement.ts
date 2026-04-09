@@ -11,7 +11,8 @@ function parseHtmlToFragment(html: string, doc: DocumentNode): ElementNode {
 
     const stack: ViewNode[] = [fragment];
 
-    // Matches (in order): comments, closing tags, opening/self-closing tags, text nodes
+    // Matches HTML tokens in the order: comments, closing tags, opening/self-closing tags, text content.
+    // Groups: [1] closing tag name, [2] opening tag name, [3] attributes, [4] self-close slash, [5] text node
     const tokenRegex = /<!--[\s\S]*?-->|<\/([a-zA-Z][a-zA-Z0-9-]*)(?:\s*)>|<([a-zA-Z][a-zA-Z0-9-]*)([^>]*?)(\/?)>|([^<]+)/g;
     let match: RegExpExecArray | null;
 
