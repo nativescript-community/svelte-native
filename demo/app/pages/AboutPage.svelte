@@ -37,7 +37,7 @@
                     <label col="0" text={feature.icon} class="fas text-purple-600 text-base mr-3" />
                     <stackLayout col="1">
                         <label text={feature.title} class="text-base font-bold text-gray-800" />
-                        <label text={feature.desc} class="text-sm text-gray-500" textWrap="true" />
+                        <label text={feature.desc} class="text-sm text-gray-500 leading-[3]" textWrap="true" />
                     </stackLayout>
                 </gridLayout>
             {/each}
@@ -58,7 +58,7 @@
     const platform = isIOS ? 'iOS' : isAndroid ? 'Android' : 'Unknown';
 
     const features = [
-        { icon: '\uf1b2', title: 'Custom Renderer API', desc: 'Svelte 5 native rendering without DOM shims' },
+        { icon: '\uf1b2', title: 'Custom Renderer API', desc: "Render any platform" },
         { icon: '\uf0e7', title: 'Reactive by Default', desc: 'Fine-grained reactivity with Svelte stores' },
         { icon: '\uf3fd', title: 'Truly Native', desc: 'Real native UI components, not web views' },
         { icon: '\uf53f', title: 'Tailwind CSS', desc: 'Utility-first styling for native views' },
