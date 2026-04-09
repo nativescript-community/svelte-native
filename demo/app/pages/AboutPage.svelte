@@ -4,8 +4,7 @@
         <stackLayout class="bg-purple-800 rounded-2xl p-6 mb-6">
             <label text="Svelte 5" class="text-4xl font-bold text-white text-center" />
             <label text="+" class="text-2xl text-purple-300 text-center" />
-            <label text="NativeScript" class="text-4xl font-bold text-white text-center mb-2" />
-            <label text="Custom Renderer" class="text-lg text-purple-200 text-center" />
+            <label text="NativeScript" class="text-4xl font-bold text-white text-center" />
         </stackLayout>
 
         <!-- Version info -->

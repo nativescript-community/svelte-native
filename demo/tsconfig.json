@@ -25,6 +25,9 @@
             ]
         }
     },
+    "files": [
+        "references.d.ts"
+    ],
     "include": [
         "app/**/*"
     ],
