@@ -24,7 +24,7 @@
   "author": "David Pershouse",
   "license": "MIT",
   "peerDependencies": {
-    "@nativescript/core": "~9.0.0",
+    "@nativescript/core": "^8.0.0",
     "svelte": ">=5.0.0"
   },
   "devDependencies": {
