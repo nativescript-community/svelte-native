@@ -96,4 +96,28 @@ export default class ElementNode extends ViewNode {
             (childNode as PropertyNode).clearOnNode(this);
         }
     }
+
+    cloneNode(deep?: boolean): ElementNode {
+        // Use the element registry to create a proper instance of the same type
+        try {
+            const { createElement } = require('./element-registry');
+            const clone = createElement(this.tagName, this._ownerDocument) as ElementNode;
+            if (deep) {
+                for (const child of this.childNodes) {
+                    clone.appendChild(child.cloneNode(true));
+                }
+            }
+            return clone;
+        } catch {
+            // Fall back to basic clone if element not registered
+            const clone = new ElementNode(this.tagName);
+            clone._ownerDocument = this._ownerDocument;
+            if (deep) {
+                for (const child of this.childNodes) {
+                    clone.appendChild(child.cloneNode(true));
+                }
+            }
+            return clone;
+        }
+    }
 }

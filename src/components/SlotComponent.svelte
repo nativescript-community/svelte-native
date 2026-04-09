@@ -1,4 +1,4 @@
-<slot props={p} />
 <script>
-$: p = $$props
+    let { children, ...p } = $props();
 </script>
+{@render children?.(p)}

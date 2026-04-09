@@ -1,10 +1,11 @@
-<template {...$$props} component="{template}" xmlns="tns" />
-<AsComponent bind:component="{template}" let:props>
-    <slot item="{(props ? props.item : null)}" index={(props ? props.index : null)}/>
-</AsComponent>
-
-
 <script>
     import AsComponent from "./AsComponent.svelte"
-    let template;
+    let { children, ...rest } = $props();
+    let template = $state(null);
 </script>
+<template {...rest} component={template} xmlns="tns"></template>
+<AsComponent bind:component={template}>
+    {#snippet children(props)}
+        {@render children?.(props)}
+    {/snippet}
+</AsComponent>

@@ -11,7 +11,9 @@ export default class TextNode extends ViewNode {
 
     setText(text: string) {
         this.text = text
-        this.parentNode.updateText()
+        if (this.parentNode) {
+            this.parentNode.updateText()
+        }
     }
 
     set data(text: string) {
@@ -20,5 +22,20 @@ export default class TextNode extends ViewNode {
 
     get data() {
         return this.text;
+    }
+
+    // nodeValue is used by svelte 5's set_text()
+    get nodeValue(): string {
+        return this.text;
+    }
+
+    set nodeValue(value: string) {
+        this.setText(value);
+    }
+
+    cloneNode(_deep?: boolean): TextNode {
+        const clone = new TextNode(this.text);
+        clone._ownerDocument = this._ownerDocument;
+        return clone;
     }
 }

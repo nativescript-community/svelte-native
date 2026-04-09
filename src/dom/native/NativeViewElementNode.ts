@@ -179,7 +179,10 @@ export default class NativeViewElementNode<T extends ViewBase> extends NativeEle
 
         //svelte compatibility wrapper
         (handler as any).__wrapper = (handler as any).__wrapper || ((args: EventData) => {
-            (args as any).type = args.eventName; 
+            (args as any).type = args.eventName;
+            // Set target to this ViewNode so svelte 5's handle_event_propagation
+            // can traverse the node tree without crashing
+            (args as any).target = this;
             handler(args)
         })
          

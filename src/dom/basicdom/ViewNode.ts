@@ -19,8 +19,8 @@ export default class ViewNode {
     _tagName: string;
     parentNode: ViewNode;
     childNodes: ViewNode[];
-    prevSibling: ViewNode;
-    nextSibling: ViewNode;
+    _prevSibling: ViewNode;
+    _nextSibling: ViewNode;
     _ownerDocument: DocumentNode;
     _attributes: { [index: string]: any };
 
@@ -29,11 +29,27 @@ export default class ViewNode {
         this._tagName = null
         this.parentNode = null
         this.childNodes = []
-        this.prevSibling = null
-        this.nextSibling = null
+        this._prevSibling = null
+        this._nextSibling = null
 
         this._ownerDocument = null
         this._attributes = {};
+    }
+
+    get prevSibling(): ViewNode {
+        return this._prevSibling;
+    }
+
+    set prevSibling(node: ViewNode) {
+        this._prevSibling = node;
+    }
+
+    get nextSibling(): ViewNode {
+        return this._nextSibling;
+    }
+
+    set nextSibling(node: ViewNode) {
+        this._nextSibling = node;
     }
 
     hasAttribute(name: string) {
@@ -220,5 +236,34 @@ export default class ViewNode {
             }
         }
         return null;
+    }
+
+    // Inserts nodes immediately before this node (svelte 5 uses this for append())
+    before(node: ViewNode): void {
+        if (!this.parentNode) return;
+        // If it's a fragment (nodeType 11 or tagName 'fragment'), insert all its children
+        if (node.nodeType === 11 || node.tagName === 'fragment') {
+            const children = [...node.childNodes];
+            for (const child of children) {
+                this.parentNode.insertBefore(child, this);
+            }
+        } else {
+            this.parentNode.insertBefore(node, this);
+        }
+    }
+
+    // Shallow/deep clone of this node - used by svelte 5's from_html template caching
+    cloneNode(deep?: boolean): ViewNode {
+        // Base implementation: clone with no attributes and optionally clone children
+        const clone = new (this.constructor as new () => ViewNode)();
+        clone._tagName = this._tagName;
+        clone.nodeType = this.nodeType;
+        clone._ownerDocument = this._ownerDocument;
+        if (deep) {
+            for (const child of this.childNodes) {
+                clone.appendChild(child.cloneNode(true));
+            }
+        }
+        return clone;
     }
 }

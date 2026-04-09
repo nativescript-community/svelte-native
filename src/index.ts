@@ -8,17 +8,53 @@ global.__onLiveSyncCore = () => {
     Application.getRootView()?._onCssStateChange();
 };
 
-export function svelteNativeNoFrame<T>(rootElement: typeof SvelteComponent<T>, data: T): Promise<SvelteComponent<T>> {
-    return new Promise((resolve, reject) => {
+// Svelte 5 imports - mount/unmount API
+// These are imported lazily to avoid issues if svelte 5 isn't installed
+let _svelte5Mount: typeof import('svelte').mount | null = null;
+let _svelte5Unmount: typeof import('svelte').unmount | null = null;
 
-        let elementInstance: SvelteComponent;
+function getSvelte5Api() {
+    if (_svelte5Mount && _svelte5Unmount) {
+        return { mount: _svelte5Mount, unmount: _svelte5Unmount };
+    }
+    try {
+        // Dynamic require to avoid breaking svelte 4 users
+        const svelte = require('svelte');
+        if (typeof svelte.mount === 'function') {
+            _svelte5Mount = svelte.mount;
+            _svelte5Unmount = svelte.unmount;
+            return { mount: _svelte5Mount, unmount: _svelte5Unmount };
+        }
+    } catch {
+        // svelte 5 not available
+    }
+    return null;
+}
+
+/**
+ * Mount a svelte 5 component without a wrapping frame.
+ * For svelte 4, falls back to new Component() syntax.
+ */
+export function svelteNativeNoFrame<T>(rootElement: any, data: T): Promise<any> {
+    return new Promise((resolve, reject) => {
+        let elementInstance: any;
 
         const buildElement = () => {
-            let frag = createElement('fragment', window.document as unknown as DocumentNode);
-            elementInstance = new rootElement({
-                target: frag,
-                props: data || {}
-            })
+            const frag = createElement('fragment', window.document as unknown as DocumentNode);
+            const svelte5 = getSvelte5Api();
+            if (svelte5) {
+                // Svelte 5 API
+                elementInstance = svelte5.mount(rootElement, {
+                    target: frag as any,
+                    props: (data || {}) as any
+                });
+            } else {
+                // Svelte 4 API (legacy)
+                elementInstance = new rootElement({
+                    target: frag,
+                    props: data || {}
+                });
+            }
             return (frag.firstChild as NativeElementNode<View>).nativeElement;
         }
 
@@ -27,7 +63,12 @@ export function svelteNativeNoFrame<T>(rootElement: typeof SvelteComponent<T>, d
             resolve(elementInstance);
         })
         Application.on(Application.exitEvent, () => {
-            elementInstance.$destroy();
+            const svelte5 = getSvelte5Api();
+            if (svelte5 && elementInstance) {
+                svelte5.unmount(elementInstance);
+            } else if (elementInstance && typeof elementInstance.$destroy === 'function') {
+                elementInstance.$destroy();
+            }
             elementInstance = null;
         })
 
@@ -39,9 +80,13 @@ export function svelteNativeNoFrame<T>(rootElement: typeof SvelteComponent<T>, d
     });
 }
 
-export function svelteNative<T>(startPage: typeof SvelteComponent<T>, data: T): Promise<SvelteComponent<T>> {
-    let rootFrame: FrameElement; 
-    let pageInstance: SvelteComponent;
+/**
+ * Mount a svelte 5 component with a root frame for navigation.
+ * For svelte 4, falls back to legacy API.
+ */
+export function svelteNative<T>(startPage: any, data: T): Promise<any> {
+    let rootFrame: FrameElement;
+    let pageInstance: any;
 
     return new Promise((resolve, reject) => {
         //wait for launch
@@ -49,8 +94,13 @@ export function svelteNative<T>(startPage: typeof SvelteComponent<T>, data: T): 
             resolve(pageInstance);
         })
         Application.on(Application.exitEvent, () => {
+            const svelte5 = getSvelte5Api();
             if (pageInstance) {
-                pageInstance.$destroy();
+                if (svelte5) {
+                    svelte5.unmount(pageInstance);
+                } else if (typeof pageInstance.$destroy === 'function') {
+                    pageInstance.$destroy();
+                }
                 pageInstance = null;
             }
         })
@@ -81,3 +131,4 @@ initializeDom()
 
 
 export { navigate, goBack, showModal, closeModal, isModalOpened, initializeDom, DomTraceCategory } from "./dom"
+export { createNativeScriptRenderer, createDefaultNativeScriptRendererOptions, nativeScriptRenderer } from "./dom/svelte5"

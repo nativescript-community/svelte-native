@@ -7,7 +7,7 @@ let externalModules = pkg.peerDependencies
     ? Object.keys(pkg.peerDependencies)
     : [];
 
-let localModules = ["dom", "components", "transitions"];
+let localModules = ["dom", "dom/svelte5", "components", "transitions"];
 
 let plugins = [
     resolve({

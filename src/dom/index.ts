@@ -5,7 +5,7 @@ import SvelteNativeDocument from "./svelte/SvelteNativeDocument";
 import NativeViewElementNode from "./native/NativeViewElementNode";
 import { Trace, View } from "@nativescript/core";
 import { time } from '@nativescript/core/profiling';
-import { logger, LogLevel } from "./basicdom";
+import { logger, LogLevel, ViewNode, ElementNode, TextNode, CommentNode } from "./basicdom";
 
 export { default as HeadElement } from "./svelte/HeadElement";
 export { default as TemplateElement } from "./svelte/TemplateElement";
@@ -33,6 +33,30 @@ function installGlobalShims(): SvelteNativeDocument {
 
     window.window = global;
     window.document = new SvelteNativeDocument();
+
+    // Svelte 5 requires Node, Element, Text, Comment to be available globally
+    // so that init_operations() can cache their property descriptors.
+    // We use our ViewNode-based classes as substitutes.
+    if (!window.Node) {
+        window.Node = ViewNode;
+    }
+    if (!window.Element) {
+        window.Element = ElementNode;
+    }
+    if (!window.Text) {
+        window.Text = TextNode;
+    }
+    if (!window.Comment) {
+        window.Comment = CommentNode;
+    }
+    // Svelte 5 checks `dom instanceof HTMLMediaElement` in event handling
+    if (!window.HTMLMediaElement) {
+        window.HTMLMediaElement = class HTMLMediaElement {};
+    }
+    // Svelte 5 checks navigator.userAgent for Firefox detection
+    if (!window.navigator) {
+        window.navigator = { userAgent: '' };
+    }
 
     if (global.__SVELTE_USE_REQUESTANIMATIONFRAME_OVERRIDE__ !== false) {
         // we still need this as of N 9 as the android runtime does not return the same kind of values

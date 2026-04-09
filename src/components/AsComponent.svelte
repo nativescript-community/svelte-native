@@ -1,16 +1,50 @@
 <script>
-    import SlotComponent from './SlotComponent.svelte'
+    import { mount, unmount } from 'svelte';
 
-    //copy our slot content and scope
-    let slots = $$props.$$slots;
-    let scope = $$props.$$scope;
+    // children is the snippet passed by the parent (svelte 5 slot replacement)
+    let { children, component = $bindable() } = $props();
 
-    export const component = class extends SlotComponent {
-        constructor(options) {
-            //force instances of this component to use our slot content and scope.
-            let new_options = Object.assign({}, options);
-            new_options.props = Object.assign({}, options.props, { $$slots: slots, $$scope: scope });
-            super(new_options)
-        }
+    // Export a component factory for use by ListViewElement
+    // Use $effect to update the factory when children changes
+    $effect(() => {
+        component = createFactory(children);
+    });
+
+    function createFactory(snippet) {
+        if (!snippet) return null;
+
+        // Returns a constructor-compatible factory
+        // ListViewElement calls: new component({ target, props: { item } })
+        return function ComponentFactory(options) {
+            const { target, props = {} } = options;
+
+            // Create an inner svelte 5 function-component that renders the snippet
+            function SnippetWrapper(anchor, innerProps) {
+                snippet?.(anchor, innerProps);
+            }
+
+            let currentTarget = target;
+            let currentProps = { ...props };
+
+            let activeInstance = mount(SnippetWrapper, {
+                target: currentTarget,
+                props: currentProps
+            });
+
+            return {
+                // $set: update props by remounting (svelte 5 compatibility shim)
+                $set(newProps) {
+                    Object.assign(currentProps, newProps);
+                    unmount(activeInstance);
+                    activeInstance = mount(SnippetWrapper, {
+                        target: currentTarget,
+                        props: currentProps
+                    });
+                },
+                $destroy() {
+                    unmount(activeInstance);
+                }
+            };
+        };
     }
 </script>
