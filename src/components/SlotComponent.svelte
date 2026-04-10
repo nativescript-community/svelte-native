@@ -1,4 +1,1 @@
-<slot props={p} />
-<script>
-$: p = $$props
-</script>
+<slot props={$$props}></slot>

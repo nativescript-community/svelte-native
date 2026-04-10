@@ -1,6 +1,6 @@
-<template {...$$props} component="{template}" xmlns="tns" />
+<template {...$$restProps} component="{template}" xmlns="tns"></template>
 <AsComponent bind:component="{template}" let:props>
-    <slot item="{(props ? props.item : null)}" index={(props ? props.index : null)}/>
+    <slot item="{(props ? props.item : null)}" index={(props ? props.index : null)}></slot>
 </AsComponent>
 
 

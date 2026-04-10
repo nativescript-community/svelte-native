@@ -1,3 +1,3 @@
 {#if __ANDROID__}
-    <slot />
+    <slot></slot>
 {/if}

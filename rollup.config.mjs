@@ -9,6 +9,20 @@ let externalModules = pkg.peerDependencies
 
 let localModules = ["dom", "components", "transitions"];
 
+// Normalize renderer import paths in the dom module output
+function fixRendererImport() {
+    return {
+        name: 'fix-renderer-import',
+        generateBundle(options, bundle) {
+            for (const file of Object.values(bundle)) {
+                if (file.type === 'chunk' && file.code) {
+                    file.code = file.code.replace(/from ['"]\.\.\/renderer['"]/g, "from './renderer'");
+                }
+            }
+        }
+    };
+}
+
 let plugins = [
     resolve({
         extensions: [".mjs", ".js"],
@@ -16,7 +30,14 @@ let plugins = [
     typescript(),
     svelte({
         include: "src/components/**/*.svelte",
+        compilerOptions: {
+            css: 'external',
+            experimental: {
+                customRenderer: "@nativescript-community/svelte-native/dom/renderer"
+            }
+        }
     }),
+    fixRendererImport(),
 ];
 
 function module_defs() {
@@ -36,6 +57,10 @@ function module_defs() {
                     ...localModules
                         .filter((m) => m != mod)
                         .map((m) => `../${m}`),
+                    // Keep renderer as external to avoid bundling it into the dom module
+                    "./renderer", "../renderer",
+                    // Custom renderer import injected by the Svelte compiler
+                    "@nativescript-community/svelte-native/dom/renderer",
                 ].some((prefix) => id.startsWith(prefix)),
             plugins: plugins,
         };
@@ -59,4 +84,17 @@ export default [
         plugins: plugins,
     },
     ...module_defs(),
+    {
+        input: "src/dom/renderer.ts",
+        output: [
+            {
+                dir: "./dist",
+                entryFileNames: "dom/renderer.js",
+                format: "esm",
+            },
+        ],
+        external: (id) =>
+            externalModules.some((prefix) => id.startsWith(prefix)),
+        plugins: plugins,
+    },
 ];

@@ -2,6 +2,7 @@ import { ListView, ItemEventData, ItemsSource, View } from '@nativescript/core'
 import TemplateElement from '../svelte/TemplateElement';
 import { createElement, DocumentNode, logger as log, registerElement, ViewNode } from '../basicdom';
 import NativeViewElementNode from './NativeViewElementNode';
+import renderer from '../renderer';
 
 export class SvelteKeyedTemplate {
     _key: string;
@@ -29,11 +30,15 @@ export class SvelteKeyedTemplate {
         wrapper.setStyle("margin", 0)
         let nativeEl = wrapper.nativeView;
         (nativeEl as any).__SvelteComponentBuilder__ = (props: any) => {
-            let instance = new this.component({
-                target: wrapper,
+            if (typeof this.component !== 'function') {
+                log.error(() => `Template component for key '${this.key}' is not available yet`);
+                return;
+            }
+            let result = renderer.render(this.component, {
+                target: wrapper as any,
                 props: props
             });
-            (nativeEl as any).__SvelteComponent__ = instance;
+            (nativeEl as any).__SvelteComponent__ = result;
         }
         return nativeEl;
     }
@@ -79,25 +84,26 @@ export default class ListViewElement extends NativeViewElementNode<ListView> {
                 component = listView.itemTemplates.filter(x => x.key == "default").map(x => (x as SvelteKeyedTemplate).component)[0]
             }
 
-            if (!component) {
+            if (!component || typeof component !== 'function') {
                 log.error(() => `Couldn't determine component to use for item at ${args.index}`);
                 return;
             }
             let wrapper = createElement('ProxyViewContainer', this.ownerDocument) as NativeViewElementNode<View>;
-            let componentInstance = new component({
-                target: wrapper,
+            let result = renderer.render(component, {
+                target: wrapper as any,
                 props: {
                     item
                 }
             });
 
             let nativeEl = wrapper.nativeView;
-            (nativeEl as any).__SvelteComponent__ = componentInstance;
+            (nativeEl as any).__SvelteComponent__ = result;
             args.view = nativeEl;
         } else {
-            let componentInstance: SvelteComponent = (args.view as any).__SvelteComponent__
+            let result: any = (args.view as any).__SvelteComponent__
             log.debug(() => `updating view for ${args.index} which is a ${args.view}`)
-            componentInstance.$set({ item })
+            // In Svelte 5, update props by re-rendering or using component exports
+            // TODO: implement proper prop updates for Svelte 5
         }
     }
 
