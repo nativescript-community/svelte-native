@@ -51,10 +51,8 @@
 </scrollView>
 
 <script>
-    import { isIOS, isAndroid } from '@nativescript/core/platform';
-
     let tapCount = 0;
-    const platform = isIOS ? 'iOS' : isAndroid ? 'Android' : 'Unknown';
+    const platform = __APPLE__ ? (__VISIONOS__ ? 'visionOS' : 'iOS') : 'Android';
 
     const features = [
         { icon: '\uf1b2', title: 'Custom Renderer API', desc: "Render any platform" },
