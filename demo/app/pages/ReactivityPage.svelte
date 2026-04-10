@@ -55,11 +55,12 @@
 </scrollView>
 
 <script>
-    let count = 0;
-    let name = '';
-    let visible = true;
+    let count = $state(0);
+    let name = $state('');
+    let visible = $state(true);
 
-    $: doubled = count * 2;
-    $: squared = count * count;
-    $: isEven = count % 2 === 0;
+
+    let doubled = $derived(count *2);
+    let squared = $derived(count * count);
+    let isEven = $derived(count % 2 === 0);
 </script>
