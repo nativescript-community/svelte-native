@@ -18,3 +18,15 @@
     font-family: "Font Awesome 5 Brands", "fa-brands-400";
     font-weight: 400;
 }
+
+.ns-visionos .text-purple-800 {
+    color: white;
+}
+
+.ns-visionos .bg-white {
+    background-color: rgba(255, 255, 255, 0.4);
+}
+
+.ns-visionos textField {
+    color: black;
+}

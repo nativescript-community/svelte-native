@@ -4,9 +4,7 @@
   "repository": "<fill-your-repository-here>",
   "dependencies": {
     "@nativescript-community/svelte-native-nativescript-ui": "1.0.0",
-    "@nativescript/core": "~9.0.0",
-    "@nativescript/theme": "^3.1.0",
-    "nativescript-ui-sidedrawer": "^15.2.3"
+    "@nativescript/core": "~9.0.0"
   },
   "devDependencies": {
     "@nativescript-community/svelte-native": "file:../dist",
@@ -15,6 +13,7 @@
     "@nativescript/tailwind": "^2.1.0",
     "@nativescript/types": "~9.0.0",
     "@nativescript/unit-test-runner": "^1.0.2",
+    "@nativescript/visionos": "9.0.1",
     "@nativescript/webpack": "~5.0.33",
     "@types/chai": "^4.2.4",
     "@types/karma-chai": "0.1.1",

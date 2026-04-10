@@ -1,6 +1,6 @@
 <page>
     <actionBar title="Svelte 5 + NativeScript" class="bg-purple-800 text-white" />
-    <tabView class="bg-white" selectedIndex={selectedTab} onselectedIndexChange={(e) => selectedTab = e.value}>
+    <tabView selectedIndex={selectedTab} onselectedIndexChange={(e) => selectedTab = e.value}>
         <tabViewItem title="Reactivity" iconSource="sys://figure.jumprope.circle.fill" class="text-sm">
             <ReactivityPage />
         </tabViewItem>
