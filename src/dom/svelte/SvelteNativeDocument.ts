@@ -1,5 +1,6 @@
 
 import { DocumentNode, ElementNode, createElement, TextNode, logger as log } from '../basicdom';
+import SvelteNativeCustomEvent from './CustomEvent';
 
 export default class SvelteNativeDocument extends DocumentNode {
     head: ElementNode;
@@ -23,12 +24,6 @@ export default class SvelteNativeDocument extends DocumentNode {
     }
 
     createEvent(type: string) {
-        let e: any = {};
-        e.initCustomEvent = (type: string, ignored1: boolean, ignored2: boolean, detail: any) => {
-            e.type = type;
-            e.detail = detail;
-            e.eventName = type;
-        }
-        return e;
+        return new SvelteNativeCustomEvent(type);
     }
 }

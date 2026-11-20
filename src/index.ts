@@ -1,5 +1,5 @@
 import { Application, View } from '@nativescript/core';
-import { navigate, ViewNode, createElement, initializeDom, FrameElement, NativeElementNode } from './dom';
+import { navigate, createElement, initializeDom, FrameElement, NativeElementNode } from './dom';
 import { DocumentNode } from './dom/basicdom';
 import type {SvelteComponent} from './ambient.js';
 
@@ -8,69 +8,88 @@ global.__onLiveSyncCore = () => {
     Application.getRootView()?._onCssStateChange();
 };
 
-export function svelteNativeNoFrame<T>(rootElement: typeof SvelteComponent<T>, data: T): Promise<SvelteComponent<T>> {
+/** Launch and root creation can happen in either order, depending on the native runtime. */
+function runApplication<T>(create: () => { instance: SvelteComponent<T>; view: View }): Promise<SvelteComponent<T>> {
     return new Promise((resolve, reject) => {
+        let instance: SvelteComponent<T>;
+        let launched = false;
+        let ended = false;
+        let settled = false;
 
-        let elementInstance: SvelteComponent;
+        const removeListeners = () => {
+            Application.off(Application.launchEvent, onLaunch);
+            Application.off(Application.exitEvent, onExit);
+        };
+        const destroy = () => {
+            const component = instance;
+            instance = undefined;
+            component?.$destroy();
+        };
+        const ready = () => {
+            if (!ended && !settled && launched && instance) {
+                settled = true;
+                Application.off(Application.launchEvent, onLaunch);
+                resolve(instance);
+            }
+        };
+        const onLaunch = () => {
+            launched = true;
+            ready();
+        };
+        const onExit = () => {
+            ended = true;
+            removeListeners();
+            try {
+                destroy();
+            } finally {
+                if (!settled) reject(new Error('Application exited before the root component was ready'));
+            }
+        };
+        const fail = (error: unknown) => {
+            ended = true;
+            removeListeners();
+            try {
+                destroy();
+            } finally {
+                reject(error);
+            }
+        };
 
-        const buildElement = () => {
-            let frag = createElement('fragment', window.document as unknown as DocumentNode);
-            elementInstance = new rootElement({
-                target: frag,
-                props: data || {}
-            })
-            return (frag.firstChild as NativeElementNode<View>).nativeElement;
-        }
-
-        //wait for launch before returning
-        Application.on(Application.launchEvent, () => {
-            resolve(elementInstance);
-        })
-        Application.on(Application.exitEvent, () => {
-            elementInstance.$destroy();
-            elementInstance = null;
-        })
-
+        Application.on(Application.launchEvent, onLaunch);
+        Application.on(Application.exitEvent, onExit);
         try {
-            Application.run({ create: buildElement });
-        } catch (e) {
-            reject(e);
+            Application.run({ create: () => {
+                if (ended) throw new Error('Application has already exited or failed to start');
+                try {
+                    const root = create();
+                    instance = root.instance;
+                    ready();
+                    return root.view;
+                } catch (error) {
+                    fail(error);
+                    throw error;
+                }
+            }});
+        } catch (error) {
+            fail(error);
         }
     });
 }
 
+export function svelteNativeNoFrame<T>(rootElement: typeof SvelteComponent<T>, data: T): Promise<SvelteComponent<T>> {
+    return runApplication(() => {
+        const frag = createElement('fragment', window.document as unknown as DocumentNode);
+        const instance = new rootElement({ target: frag, props: data || {} });
+        return { instance, view: (frag.firstChild as NativeElementNode<View>).nativeElement };
+    });
+}
+
 export function svelteNative<T>(startPage: typeof SvelteComponent<T>, data: T): Promise<SvelteComponent<T>> {
-    let rootFrame: FrameElement; 
-    let pageInstance: SvelteComponent;
-
-    return new Promise((resolve, reject) => {
-        //wait for launch
-        Application.on(Application.launchEvent, () => {
-            resolve(pageInstance);
-        })
-        Application.on(Application.exitEvent, () => {
-            if (pageInstance) {
-                pageInstance.$destroy();
-                pageInstance = null;
-            }
-        })
-
-        try {
-            Application.run({ create: () => {
-                rootFrame = createElement('frame', window.document as unknown as DocumentNode) as FrameElement;
-                rootFrame.setAttribute("id", "app-root-frame");
-
-                pageInstance = navigate({
-                    page: startPage,
-                    props: data || {},
-                    frame: rootFrame
-                })
-
-                return rootFrame.nativeView;
-            }});
-        } catch (e) {
-            reject(e);
-        }
+    return runApplication(() => {
+        const rootFrame = createElement('frame', window.document as unknown as DocumentNode) as FrameElement;
+        rootFrame.setAttribute("id", "app-root-frame");
+        const instance = navigate({ page: startPage, props: data || {}, frame: rootFrame });
+        return { instance, view: rootFrame.nativeView };
     });
 }
 
