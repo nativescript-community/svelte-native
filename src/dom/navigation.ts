@@ -4,11 +4,18 @@ import { createElement, DocumentNode, logger as log } from "./basicdom";
 import PageElement from "./native/PageElement";
 import NativeViewElementNode from "./native/NativeViewElementNode";
 import { _rootModalViews } from "@nativescript/core/ui/core/view";
-import renderer from "./renderer";
+import { render } from "./renderer";
+import type { Component } from "svelte";
 
 export type ViewSpec<T extends ViewBase = View> = T | NativeViewElementNode<T>
 export type FrameSpec = Frame | FrameElement | string
-export type PageSpec<T> = typeof SvelteComponent<T>;
+export type PageSpec<T> = Component<T, any, any> | (new (...args: any[]) => any);
+
+export type ComponentInstance<Exports = Record<string, any>> = Exports & {
+    unmount(): void;
+    /** @deprecated use `unmount` */
+    $destroy(): void;
+};
 export interface NavigationOptions<T> {
     page: PageSpec<T>;
     props?: T;
@@ -40,27 +47,21 @@ export function resolveTarget<T extends ViewBase = View>(viewSpec: ViewSpec<T>):
     }
     return viewSpec?.nativeView;
 }
-// interface ComponentInstanceInfo<T = any> { element: NativeViewElementNode<View>, pageInstance: SvelteComponent<T> }
-
-export interface ComponentInstanceInfo<T extends ViewBase = View, U = SvelteComponent> {
+export interface ComponentInstanceInfo<T extends ViewBase = View, U = ComponentInstance> {
     element: NativeViewElementNode<T>;
     viewInstance: U;
 }
 
-export function resolveComponentElement<T, U extends ViewBase = View>(viewSpec: any, props?: T): ComponentInstanceInfo<U, any> {
+export function resolveComponentElement<T, U extends ViewBase = View>(viewSpec: any, props?: T): ComponentInstanceInfo<U, ComponentInstance> {
     const dummy = createElement('fragment', window.document as unknown as DocumentNode);
-    const { component, unmount } = renderer.render(viewSpec, { target: dummy as any, props: props || {} as any });
+    const { component, unmount } = render(viewSpec, { target: dummy, props: props || {} });
     const element = dummy.firstElement() as NativeViewElementNode<U>;
-    return { element, viewInstance: { ...component, $destroy: unmount, unmount } };
+    // Extend the exports object in place so accessor exports stay live.
+    const viewInstance = Object.assign(component ?? {}, { $destroy: unmount, unmount }) as ComponentInstance;
+    return { element, viewInstance };
 }
-// export function resolveComponentElement<T>(pageSpec: PageSpec<T>, props?: T): ComponentInstanceInfo<T> {
-//     let dummy = createElement('fragment', window.document as unknown as DocumentNode);
-//     let pageInstance = new pageSpec({ target: dummy, props });
-//     let element = dummy.firstElement() as NativeViewElementNode<View>;
-//     return { element, pageInstance }
-// }
 
-export function navigate<T>(options: NavigationOptions<T>): SvelteComponent<T> {
+export function navigate<T>(options: NavigationOptions<T>): ComponentInstance {
     let { frame, page, props, ...navOptions } = options;
 
     let targetFrame = resolveFrame(frame);
@@ -152,7 +153,7 @@ export interface ShowModalOptions<T> {
 export function showModal<T, U>(modalOptions: ShowModalOptions<U>): Promise<T> {
     let { page, props = {}, target, ...options } = modalOptions;
 
-    let modalLauncher = resolveTarget(target) || Frame.topmost().currentPage || Application.getRootView();
+    let modalLauncher = resolveTarget(target) || Frame.topmost()?.currentPage || Application.getRootView();
 
     let componentInstanceInfo = resolveComponentElement(page, props);
     let modalView: ViewBase = componentInstanceInfo.element.nativeView;

@@ -2,7 +2,7 @@ import { createElement, ViewNode, logger as log, registerElement } from "../basi
 import { Frame, View } from '@nativescript/core'
 import PageElement from "./PageElement";
 import NativeViewElementNode from "./NativeViewElementNode";
-import renderer from "../renderer";
+import { render } from "../renderer";
 
 export default class FrameElement extends NativeViewElementNode<Frame> {
 
@@ -14,7 +14,7 @@ export default class FrameElement extends NativeViewElementNode<Frame> {
         if (key.toLowerCase() == "defaultpage") {
             log.debug(() => `loading page ${value}`);
             let dummy = createElement('fragment', this.ownerDocument);
-            renderer.render(value, { target: dummy as any, props: {} });
+            render(value, { target: dummy });
             (this.nativeView as Frame).navigate({ create: () => (dummy.firstElement() as NativeViewElementNode<View>).nativeView });
             return;
         }

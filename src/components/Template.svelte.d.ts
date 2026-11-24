@@ -1,10 +1,14 @@
-import type { SvelteComponentTyped } from "svelte";
-export default class AsComponent<T = any> extends SvelteComponentTyped<T> {
-    $$prop_def: {
-        key?: string;
-    }
-    $$slot_def: {
-        item: T;
-        default: any;
-    }
+import { SvelteComponent, type Snippet } from "svelte";
+
+export interface TemplateItem<T = any> {
+    item: T;
+    index: number;
 }
+
+export interface TemplateProps<T = any> {
+    key?: string;
+    children?: Snippet<[TemplateItem<T>]>;
+    [attribute: string]: any;
+}
+
+export default class Template<T = any> extends SvelteComponent<TemplateProps<T>, {}, { default: TemplateItem<T> }> {}
