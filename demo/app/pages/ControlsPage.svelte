@@ -5,7 +5,7 @@
         <!-- Slider -->
         <stackLayout class="bg-gray-100 rounded-xl p-4 mb-6">
             <label text="Slider" class="text-lg font-bold text-purple-700 mb-1" />
-            <slider value={sliderValue} minValue="0" maxValue="100" class="text-purple-700" onvalueChange={(e) => sliderValue = Math.round(e.value)} />
+            <slider bind:value={() => sliderValue, (v) => (sliderValue = Math.round(v))} minValue="0" maxValue="100" class="text-purple-700" />
             <label class="text-center text-base text-gray-600">
                 <formattedString>
                     <span text="Value: " />
@@ -20,11 +20,11 @@
             <label text="Switch" class="text-lg font-bold text-purple-700 mb-2" />
             <gridLayout columns="*, auto" class="mb-2">
                 <label col="0" text="Enable notifications" class="text-base text-gray-700" />
-                <switch col="1" class="text-purple-700" oncheckedChange={(e) => notifications = e.object.checked} />
+                <switch col="1" class="text-purple-700" bind:checked={notifications} />
             </gridLayout>
             <gridLayout columns="*, auto">
                 <label col="0" text="Auto-save" class="text-base text-gray-700" />
-                <switch col="1" class="text-purple-700" oncheckedChange={(e) => autoSave = e.object.checked} />
+                <switch col="1" class="text-purple-700" bind:checked={autoSave} />
             </gridLayout>
         </stackLayout>
 
@@ -39,7 +39,7 @@
         <!-- Segmented bar -->
         <stackLayout class="bg-gray-100 rounded-xl p-4 mb-2">
             <label text="Segmented Bar" class="text-lg font-bold text-purple-700 mb-2" />
-            <segmentedBar selectedIndex={selectedPriority} onselectedIndexChange={(e) => selectedPriority = e.value}>
+            <segmentedBar bind:selectedIndex={selectedPriority}>
                 <segmentedBarItem title="Low" />
                 <segmentedBarItem title="Medium" />
                 <segmentedBarItem title="High" />

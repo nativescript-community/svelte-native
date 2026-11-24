@@ -1,4 +1,4 @@
-import { CoreTypes, TouchManager, View } from "@nativescript/core";
+import { CoreTypes, TouchManager, type View } from "@nativescript/core";
 
 const originalTransform = Symbol("originalTransform");
 TouchManager.enableGlobalTapAnimations = true;

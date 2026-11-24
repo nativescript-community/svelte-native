@@ -14,7 +14,7 @@
 	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 	<uses-permission android:name="android.permission.INTERNET"/>
 
-	<application
+	<application android:networkSecurityConfig="@xml/network_security"
 		android:name="com.tns.NativeScriptApplication"
 		android:allowBackup="true"
 		android:icon="@drawable/icon"

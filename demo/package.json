@@ -4,45 +4,38 @@
   "repository": "<fill-your-repository-here>",
   "dependencies": {
     "@nativescript-community/svelte-native-nativescript-ui": "1.0.0",
-    "@nativescript/core": "~9.0.0"
+    "@nativescript/core": "~9.1.4",
+    "@valor/nativescript-websockets": "2.0.4"
   },
   "devDependencies": {
     "@nativescript-community/svelte-native": "file:../dist",
-    "@nativescript/android": "~9.0.0",
-    "@nativescript/ios": "9.0.3",
+    "@nativescript/android": "~9.1.0",
+    "@nativescript/ios": "~9.1.1",
     "@nativescript/tailwind": "^2.1.0",
-    "@nativescript/types": "~9.0.0",
-    "@nativescript/unit-test-runner": "^1.0.2",
+    "@nativescript/types": "~9.1.0",
+    "@nativescript/unit-test-runner": "5.0.0",
     "@nativescript/visionos": "9.0.1",
-    "@nativescript/webpack": "~5.0.33",
-    "@types/chai": "^4.2.4",
-    "@types/karma-chai": "0.1.1",
-    "@types/mocha": "^8.0.3",
-    "chai": "4.3.4",
-    "karma": "6.3.2",
-    "karma-chai": "0.1.0",
-    "karma-mocha": "2.0.1",
-    "karma-nativescript-launcher": "0.4.0",
-    "karma-webpack": "3.0.5",
-    "mocha": "8.3.2",
+    "@nativescript/webpack": "~5.0.42",
+    "@vitest/runner": "4.1.12",
     "semver": "^7.3.5",
-    "svelte": "https://pkg.pr.new/svelte@18042",
+    "svelte": "5.59.0",
     "svelte-loader": "^3.2.4",
-    "svelte-native-preprocessor": "^1.0.0",
     "svelte-preprocess": "^6.0.3",
     "tailwindcss": "~3.4.0",
-    "typescript": "~5.9.3"
+    "typescript": "~5.9.3",
+    "vite": "8.3.8",
+    "vitest": "4.1.12"
   },
   "readme": "NativeScript Application",
   "main": "app/app.ts",
   "overrides": {
-    "@nativescript/core": "~9.0.0",
+    "@nativescript/core": "~9.1.4",
     "@babel/core": {
       "semver": ">=6.3.1"
     },
     "@babel/helper-compilation-targets": {
       "semver": ">=6.3.1"
     },
-    "svelte": "https://pkg.pr.new/svelte@18042"
+    "svelte": "5.59.0"
   }
 }
