@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [5.0.0](https://github.com/nativescript-community/svelte-native/compare/v1.0.32...v5.0.0) (2026-11-24)
+
+Svelte 5 support, built on Svelte's official custom renderer API (`svelte@^5.59.0`).
+
+### ⚠ BREAKING CHANGES
+
+* Requires `svelte@^5.59.0`; Svelte 3/4 projects should stay on 1.x.
+* Components are compiled with `compilerOptions.experimental.customRenderer: "@nativescript-community/svelte-native/dom/renderer"`, and `svelteNativePreprocess()` from `@nativescript-community/svelte-native/preprocess` replaces `svelte-native-preprocessor`.
+* `transition:`/`in:`/`out:`, `animate:`, `{@html}` and `<svelte:head|window|body|document>` are not supported by Svelte in custom renderer mode.
+* `navigate()`/`showModal()` return the component's exports with `unmount()` (`$destroy()` remains as an alias); `$set`/`$on` are gone.
+* Event forwarding (`on:x` without a handler) and `|once` on component events are not supported.
+
+### Features
+
+* NativeScript custom renderer for Svelte 5 (runes and legacy components).
+* `svelteNativePreprocess()`: `bind:this`, two-way `bind:<prop>` (including function bindings), `on:` directives (with `|once`) and `<parent.prop>` property elements on NativeScript elements, and `on:` on components via `createEventDispatcher`.
+* `<Template>` supports `let:item`/`let:index` and `{#snippet children({ item, index })}`; ListView rows are mounted once, updated in place when recycled (including mutated items), see the declaring component's context, and are unmounted with their template.
+* `TemplateProps` helper for plugins with natively recycled views.
+* `once` event listener option.
+
+### Bug Fixes
+
+* DOM sibling links after `insertBefore`, which could leave native views behind when content mounted before an anchor was removed.
+* `showModal()` without a root `Frame`.
+* Errors thrown while creating the root view are logged instead of leaving a blank screen.
+* `checked` bindings on `<switch>`.
+
 ### [1.0.32](https://github.com/nativescript-community/svelte-native/compare/v1.0.31...v1.0.32) (2025-12-28)
 
 
