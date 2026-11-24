@@ -6,7 +6,7 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/nativescript-community/svelte-native.git"
+    "url": "git+https://github.com/nativescript-community/svelte-native.git"
   },
   "homepage": "https://github.com/nativescript-community/svelte-native",
   "keywords": [
