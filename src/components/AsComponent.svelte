@@ -1,14 +1,8 @@
 <script>
-    import { getAllContexts, setContext } from 'svelte';
-
-    // Instances are mounted as separate roots (e.g. by a ListView), so they would not otherwise
-    // see the context of the component tree the template was declared in.
-    const contexts = getAllContexts();
-
     // A component built from this instance's default slot. Each mount renders the slot
     // content with the props it was mounted with, read live so reactive props stay reactive.
+    // Mounted as a separate root (e.g. by a ListView), so the context comes from the mount options.
     export const component = ($$anchor, props) => {
-        for (const [key, value] of contexts) setContext(key, value);
         return content($$anchor, () => props);
     };
 

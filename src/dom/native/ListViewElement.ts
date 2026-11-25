@@ -1,24 +1,16 @@
 import { ListView, ItemEventData, ItemsSource, View } from '@nativescript/core'
-import TemplateElement from '../svelte/TemplateElement';
-import { TemplateProps } from '../svelte/TemplateProps';
+import TemplateElement, { TemplateInstance } from '../svelte/TemplateElement';
 import { createElement, logger as log, registerElement, ViewNode } from '../basicdom';
 import NativeViewElementNode from './NativeViewElementNode';
-import { render, RenderResult } from '../renderer';
+import { batchNativeUpdates } from './batchNativeUpdates';
 
 interface SvelteItemView extends View {
     __SvelteComponentBuilder__?: ((item: any, index: number) => void) | null;
-    __SvelteComponent__?: RenderResult;
-    __SvelteTemplateProps__?: TemplateProps;
+    __SvelteTemplateInstance__?: TemplateInstance;
 }
 
 function mountItem(view: SvelteItemView, wrapper: ViewNode, template: TemplateElement, item: any, index: number) {
-    const templateProps = new TemplateProps(item, index);
-    view.__SvelteTemplateProps__ = templateProps;
-    view.__SvelteComponent__ = render(template.component, {
-        target: wrapper,
-        props: templateProps.props,
-    });
-    template.addInstance(view.__SvelteComponent__);
+    view.__SvelteTemplateInstance__ = template.mount(wrapper, item, index);
 }
 
 export class SvelteKeyedTemplate {
@@ -80,9 +72,10 @@ export default class ListViewElement extends NativeViewElementNode<ListView> {
 
         let view = args.view as SvelteItemView;
 
-        if (view?.__SvelteTemplateProps__) {
+        if (view?.__SvelteTemplateInstance__) {
             log.debug(() => `updating view for ${args.index} which is a ${view}`)
-            view.__SvelteTemplateProps__.update(item, args.index);
+            const instance = view.__SvelteTemplateInstance__;
+            batchNativeUpdates(view, () => instance.update(item, args.index));
             return;
         }
 

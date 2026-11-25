@@ -9,7 +9,8 @@ import { time } from '@nativescript/core/profiling';
 import { logger, LogLevel } from "./basicdom";
 
 export { default as HeadElement } from "./svelte/HeadElement";
-export { default as TemplateElement } from "./svelte/TemplateElement";
+export { default as TemplateElement, TemplateInstance } from "./svelte/TemplateElement";
+export { render, RenderResult } from "./renderer";
 export { TemplateProps, TemplateItemProps } from "./svelte/TemplateProps";
 export { default as SvelteNativeDocument } from "./svelte/SvelteNativeDocument";
 export { default as StyleElement } from "./svelte/StyleElement";

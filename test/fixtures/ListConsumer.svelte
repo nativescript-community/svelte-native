@@ -4,6 +4,9 @@
   import ReadsContext from './ReadsContext.svelte';
 
   setContext('page', 'from page');
+
+  // records which bindings re-run, see test/template.test.ts
+  const track = (kind, value) => (globalThis.__reads?.push(kind), String(value?.name ?? value));
 </script>
 
 <listView>
@@ -13,4 +16,8 @@
   </Template>
   <Template key="object" let:item><label text={item.name} /></Template>
   <Template key="context"><ReadsContext /></Template>
+  <Template key="tracked" let:item let:index>
+    <label text={track('item', item)} />
+    <label text={track('index', index)} />
+  </Template>
 </listView>

@@ -15,7 +15,7 @@ function templates() {
 function mountRow(template: FakeNode, item: any, index: number) {
     const props = new TemplateProps(item, index);
     const cell = new FakeNode('element', 'cell');
-    mount(template.attrs.component, { target: cell, props: props.props, renderer });
+    mount(template.attrs.component, { target: cell, props: props.props, context: template.context, renderer });
     flushSync();
     return { cell, props, label: () => cell.elements[0] };
 }
@@ -62,5 +62,44 @@ describe('Template', () => {
         a.props.update('a2', 2);
         expect(a.label().attrs.text).toBe('slot a2 #2');
         expect(b.label().attrs.text).toBe('slot b #1');
+    });
+
+    describe('recycling work', () => {
+        function tracked(item: any, index: number) {
+            const reads: string[] = [];
+            (globalThis as any).__reads = reads;
+            const row = mountRow(templates().tracked, item, index);
+            reads.length = 0;
+            return { row, reads };
+        }
+
+        it('does nothing when rebound to what the row already shows', () => {
+            const { row, reads } = tracked('same', 3);
+            row.props.update('same', 3);
+            expect(reads).toEqual([]);
+        });
+
+        it('only re-runs the index bindings when just the index changes', () => {
+            const { row, reads } = tracked('same', 3);
+            row.props.update('same', 4);
+            expect(reads).toEqual(['index']);
+            expect(row.cell.elements[1].attrs.text).toBe('4');
+        });
+
+        it('only re-runs the item bindings when just the item changes', () => {
+            const { row, reads } = tracked('a', 3);
+            row.props.update('b', 3);
+            expect(reads).toEqual(['item']);
+            expect(row.cell.elements[0].attrs.text).toBe('b');
+        });
+
+        it('repaints the item, and only the item, when the same object is passed again', () => {
+            const item = { name: 'one' };
+            const { row, reads } = tracked(item, 0);
+            item.name = 'two';
+            row.props.update(item, 0);
+            expect(reads).toEqual(['item']);
+            expect(row.cell.elements[0].attrs.text).toBe('two');
+        });
     });
 });
