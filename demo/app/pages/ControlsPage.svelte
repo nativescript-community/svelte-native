@@ -48,20 +48,20 @@
         <!-- Transitions -->
         <stackLayout class="bg-gray-100 rounded-xl p-4 mb-6">
             <label text="Transitions" class="text-lg font-bold text-purple-700 mb-1" />
-            <label text="Native animations through attachments: the intro plays when an element is added after mount, the outro keeps it on screen until done." textWrap={true} class="text-sm text-gray-600 mb-2" />
+            <label text="Native animations through attachments. With collapse the height and margins animate too, so the layout around moves smoothly." textWrap={true} class="text-sm text-gray-600 mb-2" />
             <gridLayout columns="*, *, *" class="mb-2">
                 <button col="0" text={showFade ? 'Hide fade' : 'Show fade'} class="bg-purple-700 text-white rounded-lg m-1" ontap={() => (showFade = !showFade)} />
                 <button col="1" text={showSlide ? 'Hide slide' : 'Show slide'} class="bg-purple-700 text-white rounded-lg m-1" ontap={() => (showSlide = !showSlide)} />
                 <button col="2" text="Add row" class="bg-purple-700 text-white rounded-lg m-1" ontap={() => rows = [...rows, nextRow++]} />
             </gridLayout>
             {#if showFade}
-                <label text="I fade" class="bg-purple-200 text-purple-900 rounded-lg p-3 mb-1" {@attach fade({ duration: 300 })} />
+                <label text="I fade" class="bg-purple-200 text-purple-900 rounded-lg p-3 mb-1" {@attach fade({ duration: 300, collapse: true })} />
             {/if}
             {#if showSlide}
                 <label text="I slide open" class="bg-purple-300 text-purple-900 rounded-lg p-3 mb-1" {@attach slide({ duration: 300 })} />
             {/if}
             {#each rows as row (row)}
-                <gridLayout columns="*, auto" class="bg-white rounded-lg p-2 mb-1" {@attach fly({ x: 120, duration: 250 })}>
+                <gridLayout columns="*, auto" class="bg-white rounded-lg p-2 mb-1" {@attach fly({ x: 120, duration: 300, collapse: true })}>
                     <label col="0" text={`Row ${row}`} class="text-base text-gray-800" />
                     <button col="1" text="✕" class="text-red-500" ontap={() => (rows = rows.filter((r) => r !== row))} />
                 </gridLayout>

@@ -5,7 +5,7 @@ import type { Label, StackLayout } from '@nativescript/core';
 import TransitionHarness from './TransitionHarness.svelte';
 import { mountHarness } from '../helpers/mount';
 
-type Harness = { show: boolean; outer: boolean };
+type Harness = { show: boolean; outer: boolean; open: boolean };
 
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -31,7 +31,7 @@ describe('transitions (attachments backed by native animations)', () => {
         assert.equal(stack.getChildrenCount(), before, 'the element must stay while it animates out');
 
         await wait(500);
-        assert.equal(stack.getChildrenCount(), before - 1, 'the element goes once the outro is done');
+        assert.equal(stack.getChildrenCount(), before - 2, 'the elements go once the outro is done');
         unmount();
     });
 
@@ -58,6 +58,25 @@ describe('transitions (attachments backed by native animations)', () => {
         instance.outer = false;
         flush();
         assert.equal(stack.getChildrenCount(), before - 1, 'only the block that owns the transition plays it');
+        unmount();
+    });
+
+    it('collapse falls back to a plain transition for a view that has not been laid out', async () => {
+        const { instance, stack, flush, unmount } = mount();
+        const before = stack.getChildrenCount();
+
+        instance.open = false; // slide: only a layout animation
+        instance.show = false; // fade with collapse
+        flush();
+        await wait(500);
+        assert.equal(stack.getChildrenCount(), before - 3, 'direct, slid and faded are all gone');
+
+        instance.open = true;
+        instance.show = true;
+        flush();
+        await wait(1500); // an unlaid-out view stays hidden until the layout wait gives up
+        const labels = [...Array(stack.getChildrenCount()).keys()].map((i) => stack.getChildAt(i) as Label);
+        assert.isTrue(labels.every((label) => label.opacity === 1), 'every element ends visible');
         unmount();
     });
 
