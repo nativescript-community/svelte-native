@@ -10,6 +10,9 @@
         <tabViewItem title="Lists" iconSource={tabIcons.lists} class="text-sm">
             <ListPage />
         </tabViewItem>
+        <tabViewItem title="Plugins" iconSource={tabIcons.plugins} class="text-sm">
+            <CollectionPage />
+        </tabViewItem>
         <tabViewItem title="Controls" iconSource={tabIcons.controls} class="text-sm">
             <ControlsPage />
         </tabViewItem>
@@ -24,12 +27,14 @@
     import StoresPage from './pages/StoresPage.svelte'
     import ControlsPage from './pages/ControlsPage.svelte'
     import ListPage from './pages/ListPage.svelte'
+    import CollectionPage from './pages/CollectionPage.svelte'
     import AboutPage from './pages/AboutPage.svelte'
 
     const tabIcons = {
         reactivity: __APPLE__ ? 'sys://figure.jumprope.circle.fill' : 'res://ic_tab_reactivity',
         stores: __APPLE__ ? 'sys://storefront.fill' : 'res://ic_tab_stores',
         lists: __APPLE__ ? 'sys://list.bullet.rectangle.fill' : 'res://ic_tab_controls',
+        plugins: __APPLE__ ? 'sys://square.grid.2x2.fill' : 'res://ic_tab_stores',
         controls: __APPLE__ ? 'sys://gamecontroller.fill' : 'res://ic_tab_controls',
         about: __APPLE__ ? 'sys://info.circle.fill' : 'res://ic_tab_about',
     };
