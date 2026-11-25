@@ -36,6 +36,15 @@
             <label text={'Auto-Save: ' + (autoSave ? 'On' : 'Off')} class={'text-base ' + (autoSave ? 'text-green-700' : 'text-red-500')} />
         </stackLayout>
 
+        <!-- Event forwarding -->
+        <stackLayout class="bg-gray-100 rounded-xl p-4 mb-6">
+            <label text="Event forwarding" class="text-lg font-bold text-purple-700 mb-1" />
+            <label text="TapButton forwards tap and longPress with on:tap on:longPress; Stepper uses createEventDispatcher." textWrap={true} class="text-sm text-gray-600 mb-2" />
+            <Stepper value={stepValue} on:change={(e) => (stepValue = e.detail.value)} />
+            <TapButton text="Tap or long-press me" on:tap={(e) => (lastEvent = `tap from ${e.object.constructor.name}`)} on:longPress={(e) => (lastEvent = `longPress (${e.eventName})`)} />
+            <label text={`Stepper: ${stepValue} · last event: ${lastEvent}`} textWrap={true} class="text-base text-center text-gray-700 mt-2" />
+        </stackLayout>
+
         <!-- Segmented bar -->
         <stackLayout class="bg-gray-100 rounded-xl p-4 mb-2">
             <label text="Segmented Bar" class="text-lg font-bold text-purple-700 mb-2" />
@@ -50,6 +59,11 @@
 </scrollView>
 
 <script>
+    import Stepper from '../components/Stepper.svelte';
+    import TapButton from '../components/TapButton.svelte';
+
+    let stepValue = 0;
+    let lastEvent = 'none';
     let sliderValue = 50;
     let notifications = false;
     let autoSave = false;
