@@ -20,6 +20,19 @@ function isFragment(node: ViewNode) {
 	return (node as any)[svelteFragment] === true;
 }
 
+// An element that animates out (see `svelte-native/transitions`) carries its outro under this key.
+// Svelte has already torn the element down when it calls `remove`, so only its native view is kept
+// until the outro has played.
+const outro = Symbol.for('svelte-native.outro');
+type Outro = () => Promise<unknown> | void;
+
+// True while a component is mounting, when transitions skip their intro like Svelte's default `intro: false`.
+let mounting = 0;
+
+export function isMounting() {
+	return mounting > 0;
+}
+
 function insertNode(parent: ViewNode, node: ViewNode, anchor: ViewNode | null) {
 	if (isFragment(node)) {
 		for (const child of [...node.childNodes]) {
@@ -142,7 +155,24 @@ const renderer = createRenderer<Nodes>({
 	insert: insertNode,
 
 	remove(node) {
-		node.parentNode?.removeChild(node);
+		const parent = node.parentNode;
+		if (!parent) return;
+
+		const run = (node as any)[outro] as Outro | undefined;
+		if (!run) {
+			parent.removeChild(node);
+			return;
+		}
+
+		(node as any)[outro] = undefined;
+		const detach = () => {
+			if (node.parentNode === parent) parent.removeChild(node);
+		};
+		try {
+			Promise.resolve(run()).then(detach, detach);
+		} catch {
+			detach();
+		}
 	},
 
 	getParent(node) {
@@ -194,17 +224,23 @@ export function render<Props extends Record<string, any>, Exports extends Record
 	component: Component<Props, Exports, any>,
 	options: { target: ViewNode; anchor?: ViewNode; props?: Props; context?: Map<any, any>; intro?: boolean }
 ): RenderResult<Exports> {
-	const instance = mount(component, {
-		renderer,
-		target: options.target as ElementNode,
-		anchor: options.anchor as ElementNode,
-		props: (options.props ?? {}) as Props,
-		context: options.context,
-		intro: options.intro
-	});
-	// Native callers (navigation, list cells) use the view as soon as this returns, so run
-	// mount effects (onMount, attachments such as element refs) now rather than in a microtask.
-	flushSync();
+	mounting++;
+	let instance: Exports;
+	try {
+		instance = mount(component, {
+			renderer,
+			target: options.target as ElementNode,
+			anchor: options.anchor as ElementNode,
+			props: (options.props ?? {}) as Props,
+			context: options.context,
+			intro: options.intro
+		});
+		// Native callers (navigation, list cells) use the view as soon as this returns, so run
+		// mount effects (onMount, attachments such as element refs) now rather than in a microtask.
+		flushSync();
+	} finally {
+		mounting--;
+	}
 	return {
 		component: instance,
 		unmount: () => {

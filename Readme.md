@@ -139,13 +139,36 @@ Rows are recycled natively: a row's template is mounted once and its `item`/`ind
 
 ### Not available with the custom renderer
 
-These Svelte features are rejected by the compiler in custom renderer mode: `transition:`/`in:`/`out:`, `animate:`, `{@html}`, `<svelte:head>`, `<svelte:window>`, `<svelte:body>`, `<svelte:document>`, and `|once` on component events. Use the NativeScript animation API (`view.animate()`) through an element ref for animations.
+These Svelte features are rejected by the compiler in custom renderer mode: `transition:`/`in:`/`out:`, `animate:`, `{@html}`, `<svelte:head>`, `<svelte:window>`, `<svelte:body>`, `<svelte:document>`, and `|once` on component events. For animations use the native transitions below.
+
+### Transitions
+
+Svelte's `transition:` directives are rejected under a custom renderer, so transitions are attachments that run one native animation (`view.animate()`):
+
+```svelte
+<script>
+  import { fade, fly, slide, scale } from '@nativescript-community/svelte-native/transitions';
+</script>
+
+{#if open}
+  <label text="Hello" {@attach fade({ duration: 300 })} />
+{/if}
+
+{#each rows as row (row.id)}
+  <gridLayout {@attach fly({ x: 120, duration: 250, intro: false })}>...</gridLayout>
+{/each}
+```
+
+* The intro plays when the element is added after its component was mounted, never during the initial mount.
+* The outro plays when the element's own block removes it (`{#if}` turning false, a keyed `{#each}` item leaving). The element stays on screen until the outro is done. Elements that leave together with an ancestor are removed straight away, so transitions are local like Svelte's default.
+* Options: `delay`, `duration`, `easing` (a `CoreTypes.AnimationCurve` or one of `easings`), `intro`, `outro`. `transition(create, options)` builds your own from a function returning `{ delay, duration, curve, props(t) }`, where `props(t)` gives the native animation values for progress `t` (0 hidden, 1 shown).
+* They animate native properties (`opacity`, `translate`, `scale`), not layout: siblings move when the element is finally removed.
 
 ### Migrating from svelte-native 1.x (Svelte 4)
 
  * Configure `svelte.config.js` as above, and replace `svelte-native-preprocessor` with `svelteNativePreprocess()`.
  * `navigate()`/`showModal()` accept Svelte 5 components; the returned instance exposes the component's exports and `unmount()` (`$destroy()` is kept as an alias). `$set`/`$on` no longer exist; pass reactive props or callback props instead.
- * Svelte transitions are no longer available (see above).
+ * `transition:fade={{ duration: 200 }}` becomes `{@attach fade({ duration: 200 })}` (see Transitions below); `in:` and `out:` become `{ outro: false }` and `{ intro: false }`. `animate:` has no replacement.
 
 ## Examples
 
