@@ -139,7 +139,7 @@ Rows are recycled natively: a row's template is mounted once and its `item`/`ind
 
 ### Not available with the custom renderer
 
-These Svelte features are rejected by the compiler in custom renderer mode: `transition:`/`in:`/`out:`, `animate:`, `{@html}`, `<svelte:head>`, `<svelte:window>`, `<svelte:body>`, `<svelte:document>`, and `|once` on component events. For animations use the native transitions below.
+These Svelte features are rejected by the compiler in custom renderer mode: `animate:`, `{@html}`, `<svelte:head>`, `<svelte:window>`, `<svelte:body>`, `<svelte:document>`, and `|once` on component events. For animations use the native transitions below.
 
 ### Transitions
 
@@ -159,6 +159,7 @@ Svelte's `transition:` directives are rejected under a custom renderer, so trans
 {/each}
 ```
 
+* `transition:fade={{ duration: 300 }}` in existing markup is rewritten to `{@attach fade({ duration: 300 })}` by `svelteNativePreprocess`, so Svelte 4 templates that import these functions need no change.
 * The intro plays when the element is added after its component was mounted, never during the initial mount.
 * The outro plays when the element's own block removes it (`{#if}` turning false, a keyed `{#each}` item leaving). The element stays on screen until the outro is done. Elements that leave together with an ancestor are removed straight away, so transitions are local like Svelte's default.
 * Options: `delay`, `duration`, `easing` (a `CoreTypes.AnimationCurve` or one of `easings`), `intro`, `outro`. `transition(create, options)` builds your own from a function returning `{ delay, duration, curve, props(t) }`, where `props(t)` gives the native animation values for progress `t` (0 hidden, 1 shown).
@@ -168,7 +169,7 @@ Svelte's `transition:` directives are rejected under a custom renderer, so trans
 
  * Configure `svelte.config.js` as above, and replace `svelte-native-preprocessor` with `svelteNativePreprocess()`.
  * `navigate()`/`showModal()` accept Svelte 5 components; the returned instance exposes the component's exports and `unmount()` (`$destroy()` is kept as an alias). `$set`/`$on` no longer exist; pass reactive props or callback props instead.
- * `transition:fade={{ duration: 200 }}` becomes `{@attach fade({ duration: 200 })}` (see Transitions below); `in:` and `out:` become `{ outro: false }` and `{ intro: false }`. `animate:` has no replacement.
+ * `transition:`, `in:` and `out:` keep working when the function is one of the transitions below: the preprocessor rewrites `transition:fade={{ duration: 200 }}` to `{@attach fade({ duration: 200 })}`, and `in:`/`out:` pass `outro: false`/`intro: false`. A transition of your own must be written as an attachment factory (see `transition()`). `animate:` has no replacement.
 
 ## Examples
 

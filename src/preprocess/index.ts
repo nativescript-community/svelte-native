@@ -18,6 +18,8 @@ interface MarkupInput {
  * - `bind:text={value}` on an element  → `text={value} ontextChange={(e) => value = e.value}`
  * - `on:tap={handler}` on an element   → `ontap={handler}` (`|once` is honoured, DOM-only modifiers are dropped)
  * - `on:done={handler}` on a component → `$$events={{ done: handler }}`, which `createEventDispatcher` reads
+ * - `transition:fade={params}` → `{@attach fade(params)}`, so Svelte 4 markup keeps working (`in:` and `out:` pass
+ *   `outro: false` / `intro: false`; the function must be an attachment factory, like those of `svelte-native/transitions`)
  * - `on:tap` (no handler) on an element or component → re-dispatches the native event to the handlers the parent
  *   passed in `$$events`, through a `createEventDispatcher` the preprocessor adds to the component's script
  *
@@ -144,6 +146,8 @@ function transformElement(node: Node, content: string, out: MagicString, ctx: Co
             const { getter, setter } = bindingAccessors(attr, content);
             replacements.set(attr, `${attr.name}={${getter}}`);
             addHandler(`${attr.name}Change`, { attr, code: `(e) => { ${setter}; }` });
+        } else if (attr.type === 'TransitionDirective') {
+            replacements.set(attr, rewriteTransition(attr, content));
         } else if (attr.type === 'OnDirective') {
             const code = attr.expression ? source(content, attr.expression) : forwardEvent(attr.name, ctx);
             if (isOnce(attr)) {
@@ -239,6 +243,15 @@ function addDispatcher(ast: { instance: Node | null }, out: MagicString) {
     } else {
         out.append(`\n<script>${code}</script>\n`);
     }
+}
+
+// `|global` and `|local` have no meaning here: attachments are always local to their own block.
+function rewriteTransition(attr: Node, content: string) {
+    const params = attr.expression ? source(content, attr.expression as Node) : '';
+    // an `in:` has no outro and an `out:` no intro
+    const flag = attr.intro && !attr.outro ? 'outro: false' : attr.outro && !attr.intro ? 'intro: false' : '';
+    const args = flag ? `{ ${params ? `...(${params}), ` : ''}${flag} }` : params;
+    return `{@attach ${attr.name}(${args})}`;
 }
 
 function rewriteOnceEvent(event: string, handler: string) {

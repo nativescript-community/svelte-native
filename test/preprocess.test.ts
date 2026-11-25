@@ -130,6 +130,22 @@ describe('svelteNativePreprocess', () => {
         compiles(out);
     });
 
+    it('rewrites transition directives to attachments', () => {
+        const out = run(`<script>import { fade, fly } from 'x'; let p = {};</script><label transition:fade /><label transition:fade={{ duration: 300 }} /><label in:fly={p} /><label out:fade|local /><label in:fade />`);
+        expect(out).toContain('<label {@attach fade()} />');
+        expect(out).toContain('<label {@attach fade({ duration: 300 })} />');
+        expect(out).toContain('<label {@attach fly({ ...(p), outro: false })} />');
+        expect(out).toContain('<label {@attach fade({ intro: false })} />');
+        expect(out).toContain('<label {@attach fade({ outro: false })} />');
+        compiles(out);
+    });
+
+    it('rewrites transition directives on <svelte:element> and inside blocks', () => {
+        const out = run(`<script>import { fade } from 'x'; let on = true, tag = 'label';</script>{#if on}<svelte:element this={tag} transition:fade={{ delay: 1 }} />{/if}`);
+        expect(out).toContain('{@attach fade({ delay: 1 })}');
+        compiles(out);
+    });
+
     it('ignores syntax inside script and style blocks', () => {
         const src = `<script lang="ts">const x: Array<string> = []; // <page.foo></script><label bind:this={x} /><style lang="scss">$c: red; label { color: $c; }</style>`;
         const out = run(src);
