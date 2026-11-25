@@ -16,6 +16,13 @@ const frames = vi.hoisted(() => {
         }
     };
 });
+const measured = vi.hoisted(() => ({ height: 50, onMeasure: undefined as undefined | (() => void) }));
+vi.mock('../src/transitions/measure', () => ({
+    measureNaturalHeight: () => {
+        measured.onMeasure?.();
+        return measured.height;
+    }
+}));
 vi.mock('../src/transitions/frame', () => ({
     requestAnimationFrame: (callback: (now: number) => void) => (frames.state.queue.set(++frames.state.id, callback), frames.state.id),
     cancelAnimationFrame: (id: number) => frames.state.queue.delete(id)
@@ -230,16 +237,23 @@ describe('transition with collapse', () => {
         expect(done).toBe(true);
     });
 
-    it('intro keeps the element invisible until it is laid out, then grows from 0 and restores its size', async () => {
+    it('intro starts collapsed and invisible, never taking its full height, then grows once measured', async () => {
         const { view, node, animations } = fakeView({ getActualSize: () => ({ width: 0, height: 0 }) });
         collapsing()(node);
+        // before any layout pass: the element takes no space and cannot be seen
         expect(view.opacity).toBe(0);
+        expect(extent(view)).toEqual([0, 0, 0]);
         expect(animations).toHaveLength(0);
 
-        view.getActualSize = () => ({ width: 100, height: 50 });
+        // laid out at height 0: its width is known now
+        view.getActualSize = () => ({ width: 100, height: 0 });
         view.listeners.layoutChanged.forEach((handler: () => void) => handler());
+        expect(animations).toHaveLength(0); // the layout pass is left alone, work waits for the next frame
+
+        frames.run(0);
         expect(extent(view)).toEqual([0, 0, 0]);
         expect(animations).toHaveLength(1);
+        expect(animations[0].definition).toMatchObject({ opacity: 1 });
 
         frames.run(0);
         frames.run(50);
@@ -252,10 +266,33 @@ describe('transition with collapse', () => {
         expect(extent(view)).toEqual(['auto', 4, 6]);
     });
 
-    it('intro starts straight away when the view is already laid out', () => {
+    it("intro measures with the element's own size restored, then collapses it again", () => {
         const { view, node } = fakeView();
+        let seen: unknown[] | undefined;
+        measured.onMeasure = () => (seen = extent(view));
+        collapsing()(node);
+        frames.run(0);
+        measured.onMeasure = undefined;
+        expect(seen).toEqual(['auto', 4, 6]);
+        expect(extent(view)).toEqual([0, 0, 0]);
+    });
+
+    it('intro starts straight away when the view is already laid out', () => {
+        const { view, node, animations } = fakeView();
         collapsing()(node);
         expect(extent(view)).toEqual([0, 0, 0]);
+        frames.run(0);
+        expect(animations).toHaveLength(1);
+    });
+
+    it('intro without a measurable height restores the element and plays the plain transition', () => {
+        const { view, node, animations } = fakeView();
+        measured.height = 0;
+        collapsing()(node);
+        frames.run(0);
+        expect(extent(view)).toEqual(['auto', 4, 6]);
+        expect(animations).toHaveLength(1);
+        measured.height = 50;
     });
 
     it('does not collapse an element without a height', async () => {
@@ -269,11 +306,15 @@ describe('transition with collapse', () => {
         await finished;
     });
 
-    it('cancelling an intro that is waiting for layout restores the opacity path without starting anything', () => {
-        const { view, node, animations } = fakeView({ getActualSize: () => ({ width: 0, height: 0 }) });
-        const cleanup = collapsing()(node);
-        cleanup();
-        expect(view.listeners.layoutChanged).toEqual([]);
-        expect(animations).toHaveLength(0);
+    it('cancelling an intro that is waiting for layout, or for its first frame, starts nothing', () => {
+        const waiting = fakeView({ getActualSize: () => ({ width: 0, height: 0 }) });
+        collapsing()(waiting.node)();
+        expect(waiting.view.listeners.layoutChanged).toEqual([]);
+        expect(waiting.animations).toHaveLength(0);
+
+        const framed = fakeView();
+        collapsing()(framed.node)();
+        frames.run(0);
+        expect(framed.animations).toHaveLength(0);
     });
 });

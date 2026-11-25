@@ -3,6 +3,7 @@ import type { NativeViewElementNode } from '../dom';
 import { isMounting } from '../dom/renderer';
 import { curveFunction } from './curve';
 import { cancelAnimationFrame, requestAnimationFrame } from './frame';
+import { measureNaturalHeight } from './measure';
 
 export interface NativeAnimationDefinition {
     opacity?: number;
@@ -135,7 +136,7 @@ function measure(view: View): Extent | null {
     return { height, marginTop: view.effectiveMarginTop || 0, marginBottom: view.effectiveMarginBottom || 0 };
 }
 
-/** Calls `ready` once `view` has been laid out, which is when its natural size is known. */
+/** Calls `ready` once `view` has been laid out, which is when its width is known. */
 function whenLaidOut(view: View, ready: () => void): () => void {
     let done = false;
     let timer: ReturnType<typeof setTimeout>;
@@ -146,7 +147,7 @@ function whenLaidOut(view: View, ready: () => void): () => void {
         view.off('layoutChanged', run);
         ready();
     };
-    if (view.getActualSize().height > 0) {
+    if (view.getActualSize().width > 0) {
         run();
     } else {
         view.on('layoutChanged', run);
@@ -172,23 +173,42 @@ function play(view: View, spec: TransitionSpec, direction: 'in' | 'out', collaps
         return all([playNative(view, spec, direction), tween(spec.delay, spec.duration, spec.curve, (progress) => setExtent(view, extent, 1 - progress))]);
     }
 
-    // The natural height is only known after layout, so the element stays invisible until then.
+    // The element must never take its full height in a layout pass, or the content around it would
+    // jump before it grows. It starts collapsed and invisible; once it has been laid out (which gives
+    // it its width) its natural height is measured on its own, without a layout pass of the parent.
     const saved = { height: view.height, marginTop: view.marginTop, marginBottom: view.marginBottom, opacity: view.opacity };
+    const collapsed: Extent = { height: 1, marginTop: 1, marginBottom: 1 };
     view.opacity = 0;
+    setExtent(view, collapsed, 0);
+
     let inner: Playing | null = null;
     let cancelled = false;
+    let frame: number | undefined;
     let resolve!: () => void;
     const finished = new Promise<void>((r) => (resolve = r));
 
-    const stopWaiting = whenLaidOut(view, () => {
+    const begin = () => {
+        frame = undefined;
         if (cancelled) return resolve();
-        const extent = measure(view);
+
+        // restore the element's own size just long enough to read its natural size
+        view._batchUpdate(() => {
+            view.height = saved.height;
+            view.marginTop = saved.marginTop;
+            view.marginBottom = saved.marginBottom;
+        });
+        const height = measureNaturalHeight(view, view.getActualSize().width);
+        const extent: Extent = { height, marginTop: view.effectiveMarginTop || 0, marginBottom: view.effectiveMarginBottom || 0 };
+        setExtent(view, collapsed, 0);
         view.opacity = saved.opacity;
-        if (!extent) {
+
+        if (!(height > 0)) {
+            view.height = saved.height;
+            view.marginTop = saved.marginTop;
+            view.marginBottom = saved.marginBottom;
             inner = playNative(view, spec, direction);
             return void inner.finished.then(resolve);
         }
-        setExtent(view, extent, 0);
         inner = all([
             playNative(view, spec, direction),
             // the spec's own delay is applied by both, so they stay in step
@@ -202,6 +222,11 @@ function play(view: View, spec: TransitionSpec, direction: 'in' | 'out', collaps
             }
             resolve();
         });
+    };
+
+    // the layout notification arrives inside the layout pass, so the work is left for the next frame
+    const stopWaiting = whenLaidOut(view, () => {
+        frame = requestAnimationFrame(begin);
     });
 
     return {
@@ -209,6 +234,7 @@ function play(view: View, spec: TransitionSpec, direction: 'in' | 'out', collaps
         cancel() {
             cancelled = true;
             stopWaiting();
+            if (frame !== undefined) cancelAnimationFrame(frame);
             inner?.cancel();
             resolve();
         }
