@@ -1,6 +1,8 @@
 import type { AnimationDefinition, Color, Pair, View } from '@nativescript/core';
 import type { NativeViewElementNode } from '../dom';
 import { isMounting } from '../dom/renderer';
+import { curveFunction } from './curve';
+import { cancelAnimationFrame, requestAnimationFrame } from './frame';
 
 export interface NativeAnimationDefinition {
     opacity?: number;
@@ -23,6 +25,11 @@ export interface TransitionOptions {
     intro?: boolean;
     /** Keep the element on screen and play when it is removed. Default true. */
     outro?: boolean;
+    /**
+     * Also animate the element's height and vertical margins from and to 0, so the layout around it
+     * moves with it instead of jumping when it appears or goes. Default false.
+     */
+    collapse?: boolean;
 }
 
 // Read by the renderer when it removes the element, see `outro` in dom/renderer.ts.
@@ -47,27 +54,165 @@ function apply(view: View, values: NativeAnimationDefinition) {
     });
 }
 
-/** Animates `view` from hidden to shown (`in`) or shown to hidden (`out`) with one native animation. */
 interface Playing {
     finished: Promise<void>;
     cancel(): void;
 }
 
-function play(view: View, spec: TransitionSpec, direction: 'in' | 'out'): Playing {
+const noop = (): void => {};
+
+/** Runs `onFrame` with the eased progress (0..1) of a display-synced animation, after `delay`. */
+function tween(delay: number, duration: number, curve: TransitionSpec['curve'], onFrame: (progress: number) => void): Playing {
+    const ease = curveFunction(curve);
+    let resolve!: () => void;
+    const finished = new Promise<void>((r) => (resolve = r));
+    let frame: number | undefined;
+    let start: number | undefined;
+    let cancelled = false;
+
+    const step = (now: number) => {
+        frame = undefined;
+        if (cancelled) return;
+        start ??= now;
+        const elapsed = now - start - delay;
+        if (elapsed >= 0) onFrame(ease(duration > 0 ? Math.min(elapsed / duration, 1) : 1));
+        if (elapsed >= duration) resolve();
+        else frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+
+    return {
+        finished,
+        cancel() {
+            cancelled = true;
+            if (frame !== undefined) cancelAnimationFrame(frame);
+            resolve();
+        }
+    };
+}
+
+function all(parts: Playing[]): Playing {
+    return {
+        finished: Promise.all(parts.map((part) => part.finished)).then(noop),
+        cancel: () => parts.forEach((part) => part.cancel())
+    };
+}
+
+/** The native animation of the spec's properties, if it has any. */
+function playNative(view: View, spec: TransitionSpec, direction: 'in' | 'out'): Playing {
     const from = direction === 'in' ? 0 : 1;
     const to = 1 - from;
     apply(view, spec.props(from));
+    const target = spec.props(to);
+    if (!Object.keys(target).length) return { finished: Promise.resolve(), cancel: noop };
     if (!view.nativeViewProtected) {
-        apply(view, spec.props(to));
-        return { finished: Promise.resolve(), cancel() {} };
+        apply(view, target);
+        return { finished: Promise.resolve(), cancel: noop };
     }
-    const animation = view.createAnimation({ ...spec.props(to), delay: spec.delay, duration: spec.duration, curve: spec.curve });
+    const animation = view.createAnimation({ ...target, delay: spec.delay, duration: spec.duration, curve: spec.curve });
     // cancelling rejects the animation's promise, which is expected
-    const finished = animation.play().then(
-        (): void => {},
-        (): void => {}
-    );
+    const finished = animation.play().then(noop, noop);
     return { finished, cancel: () => animation.isPlaying && animation.cancel() };
+}
+
+interface Extent {
+    height: number;
+    marginTop: number;
+    marginBottom: number;
+}
+
+function setExtent(view: View, extent: Extent, progress: number) {
+    view._batchUpdate(() => {
+        view.height = extent.height * progress;
+        view.marginTop = extent.marginTop * progress;
+        view.marginBottom = extent.marginBottom * progress;
+    });
+}
+
+function measure(view: View): Extent | null {
+    const height = view.getActualSize().height;
+    if (!(height > 0)) return null;
+    return { height, marginTop: view.effectiveMarginTop || 0, marginBottom: view.effectiveMarginBottom || 0 };
+}
+
+/** Calls `ready` once `view` has been laid out, which is when its natural size is known. */
+function whenLaidOut(view: View, ready: () => void): () => void {
+    let done = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const run = () => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        view.off('layoutChanged', run);
+        ready();
+    };
+    if (view.getActualSize().height > 0) {
+        run();
+    } else {
+        view.on('layoutChanged', run);
+        // a view that is never laid out must not stay hidden
+        timer = setTimeout(run, 1000);
+    }
+    return () => {
+        done = true;
+        clearTimeout(timer);
+        view.off('layoutChanged', run);
+    };
+}
+
+/** Animates `view` from hidden to shown (`in`) or shown to hidden (`out`). */
+function play(view: View, spec: TransitionSpec, direction: 'in' | 'out', collapse: boolean): Playing {
+    if (!collapse) return playNative(view, spec, direction);
+
+    if (direction === 'out') {
+        const extent = measure(view);
+        if (!extent) return playNative(view, spec, direction);
+        // an explicit height freezes the layout at the current size, then it shrinks from there
+        setExtent(view, extent, 1);
+        return all([playNative(view, spec, direction), tween(spec.delay, spec.duration, spec.curve, (progress) => setExtent(view, extent, 1 - progress))]);
+    }
+
+    // The natural height is only known after layout, so the element stays invisible until then.
+    const saved = { height: view.height, marginTop: view.marginTop, marginBottom: view.marginBottom, opacity: view.opacity };
+    view.opacity = 0;
+    let inner: Playing | null = null;
+    let cancelled = false;
+    let resolve!: () => void;
+    const finished = new Promise<void>((r) => (resolve = r));
+
+    const stopWaiting = whenLaidOut(view, () => {
+        if (cancelled) return resolve();
+        const extent = measure(view);
+        view.opacity = saved.opacity;
+        if (!extent) {
+            inner = playNative(view, spec, direction);
+            return void inner.finished.then(resolve);
+        }
+        setExtent(view, extent, 0);
+        inner = all([
+            playNative(view, spec, direction),
+            // the spec's own delay is applied by both, so they stay in step
+            tween(spec.delay, spec.duration, spec.curve, (progress) => setExtent(view, extent, progress))
+        ]);
+        inner.finished.then(() => {
+            if (!cancelled) {
+                view.height = saved.height;
+                view.marginTop = saved.marginTop;
+                view.marginBottom = saved.marginBottom;
+            }
+            resolve();
+        });
+    });
+
+    return {
+        finished,
+        cancel() {
+            cancelled = true;
+            stopWaiting();
+            inner?.cancel();
+            resolve();
+        }
+    };
 }
 
 /**
@@ -78,7 +223,7 @@ function play(view: View, spec: TransitionSpec, direction: 'in' | 'out'): Playin
  * false, and the element stays until it is done. Elements removed together with an ancestor do not
  * play it, so transitions are local like Svelte's default.
  */
-export function transition(create: (view: View) => TransitionSpec, { intro = true, outro = true }: TransitionOptions = {}) {
+export function transition(create: (view: View) => TransitionSpec, { intro = true, outro = true, collapse = false }: TransitionOptions = {}) {
     return (node: NativeViewElementNode<View>) => {
         const view = node.nativeView;
         const spec = create(view);
@@ -87,11 +232,11 @@ export function transition(create: (view: View) => TransitionSpec, { intro = tru
         if (outro) {
             (node as any)[outroKey] = () => {
                 introPlaying?.cancel();
-                return play(view, spec, 'out').finished;
+                return play(view, spec, 'out', collapse).finished;
             };
         }
         if (intro && !isMounting()) {
-            introPlaying = play(view, spec, 'in');
+            introPlaying = play(view, spec, 'in', collapse);
         }
         // Svelte tears the effect down after the renderer removed the element, i.e. after the outro
         // started, so only the intro may be cancelled here.

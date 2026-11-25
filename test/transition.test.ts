@@ -3,6 +3,24 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 let mounting = false;
 vi.mock('../src/dom/renderer', () => ({ isMounting: () => mounting }));
 
+// a frame loop the tests step by hand: `frames.run(ms)` delivers one frame ms later than the previous
+const frames = vi.hoisted(() => {
+    const state = { time: 0, queue: new Map<number, (now: number) => void>(), id: 0 };
+    return {
+        state,
+        run(ms: number) {
+            state.time += ms;
+            const queued = [...state.queue.values()];
+            state.queue.clear();
+            for (const callback of queued) callback(state.time);
+        }
+    };
+});
+vi.mock('../src/transitions/frame', () => ({
+    requestAnimationFrame: (callback: (now: number) => void) => (frames.state.queue.set(++frames.state.id, callback), frames.state.id),
+    cancelAnimationFrame: (id: number) => frames.state.queue.delete(id)
+}));
+
 import { transition } from '../src/transitions/transition';
 
 const outro = Symbol.for('svelte-native.outro');
@@ -16,6 +34,19 @@ function fakeView(overrides: Record<string, any> = {}) {
         translateX: 0,
         translateY: 0,
         style: {},
+        height: 'auto',
+        marginTop: 4,
+        marginBottom: 6,
+        effectiveMarginTop: 4,
+        effectiveMarginBottom: 6,
+        listeners: {} as Record<string, (() => void)[]>,
+        getActualSize: () => ({ width: 100, height: 50 }),
+        on(event: string, handler: () => void) {
+            (view.listeners[event] ??= []).push(handler);
+        },
+        off(event: string, handler: () => void) {
+            view.listeners[event] = (view.listeners[event] ?? []).filter((h: () => void) => h !== handler);
+        },
         nativeViewProtected: {},
         _batchUpdate: (fn: () => void) => fn(),
         createAnimation(definition: any) {
@@ -150,5 +181,99 @@ describe('transition', () => {
         expect(view.scaleY).toBe(0);
         expect(view.translateX).toBe(0);
         expect(view.translateY).toBe(0);
+    });
+});
+
+describe('transition with collapse', () => {
+    const spec = { delay: 0, duration: 100, props: (t: number) => ({ opacity: t }) };
+    const collapsing = (options = {}) => transition(() => spec, { collapse: true, ...options });
+    const extent = (view: any) => [view.height, view.marginTop, view.marginBottom];
+
+    beforeEach(() => {
+        frames.state.queue.clear();
+        frames.state.time = 0;
+    });
+
+    it('outro shrinks the height and vertical margins to 0 in step with the animation', async () => {
+        const { view, node, animations } = fakeView();
+        mounting = true;
+        collapsing()(node);
+
+        const finished = node[outro]();
+        animations[0].finish();
+        expect(extent(view)).toEqual([50, 4, 6]);
+
+        frames.run(1000); // first frame starts the clock
+        frames.run(50);
+        expect(view.height).toBeCloseTo(25, 5);
+        expect(view.marginTop).toBeCloseTo(2, 5);
+
+        frames.run(60);
+        expect(extent(view)).toEqual([0, 0, 0]);
+        await finished.then(() => undefined);
+    });
+
+    it('the outro waits for the layout animation, not just the native one', async () => {
+        const { animations, node } = fakeView();
+        mounting = true;
+        collapsing()(node);
+        let done = false;
+        node[outro]().then(() => (done = true));
+
+        animations[0].finish();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        expect(done).toBe(false);
+
+        frames.run(0);
+        frames.run(150);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        expect(done).toBe(true);
+    });
+
+    it('intro keeps the element invisible until it is laid out, then grows from 0 and restores its size', async () => {
+        const { view, node, animations } = fakeView({ getActualSize: () => ({ width: 0, height: 0 }) });
+        collapsing()(node);
+        expect(view.opacity).toBe(0);
+        expect(animations).toHaveLength(0);
+
+        view.getActualSize = () => ({ width: 100, height: 50 });
+        view.listeners.layoutChanged.forEach((handler: () => void) => handler());
+        expect(extent(view)).toEqual([0, 0, 0]);
+        expect(animations).toHaveLength(1);
+
+        frames.run(0);
+        frames.run(50);
+        expect(view.height).toBeCloseTo(25, 5);
+        frames.run(60);
+        expect(extent(view)).toEqual([50, 4, 6]);
+
+        animations[0].finish();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        expect(extent(view)).toEqual(['auto', 4, 6]);
+    });
+
+    it('intro starts straight away when the view is already laid out', () => {
+        const { view, node } = fakeView();
+        collapsing()(node);
+        expect(extent(view)).toEqual([0, 0, 0]);
+    });
+
+    it('does not collapse an element without a height', async () => {
+        const { view, animations, node } = fakeView({ getActualSize: () => ({ width: 0, height: 0 }) });
+        mounting = true;
+        collapsing()(node);
+        const finished = node[outro]();
+        expect(view.height).toBe('auto');
+        expect(animations).toHaveLength(1);
+        animations[0].finish();
+        await finished;
+    });
+
+    it('cancelling an intro that is waiting for layout restores the opacity path without starting anything', () => {
+        const { view, node, animations } = fakeView({ getActualSize: () => ({ width: 0, height: 0 }) });
+        const cleanup = collapsing()(node);
+        cleanup();
+        expect(view.listeners.layoutChanged).toEqual([]);
+        expect(animations).toHaveLength(0);
     });
 });

@@ -40,19 +40,9 @@ export function fly({ delay = 0, duration = 400, easing = CoreTypes.AnimationCur
     }, options);
 }
 
+/** Opens and closes the element's height (and vertical margins), moving the layout around it with it. */
 export function slide({ delay = 0, duration = 400, easing = CoreTypes.AnimationCurve.easeOut, ...options }: TransitionParams = {}) {
-    return transition((view: View): TransitionSpec => {
-        const { effectiveHeight: height, scaleX, scaleY, translateX, translateY } = view;
-        return {
-            delay,
-            duration,
-            curve: easing,
-            props: (t) => ({
-                scale: { x: scaleX, y: t * scaleY },
-                translate: { x: translateX, y: translateY - (1 - t) * 0.5 * height }
-            })
-        };
-    }, options);
+    return transition((): TransitionSpec => ({ delay, duration, curve: easing, props: () => ({}) }), { collapse: true, ...options });
 }
 
 export function scale({ delay = 0, duration = 400, easing = CoreTypes.AnimationCurve.easeOut, start = 0, ...options }: TransitionParams & { start?: number } = {}) {
