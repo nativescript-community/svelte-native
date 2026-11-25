@@ -5,7 +5,9 @@
   "dependencies": {
     "@nativescript-community/svelte-native-nativescript-ui": "1.0.0",
     "@nativescript/core": "~9.1.4",
-    "@valor/nativescript-websockets": "2.0.4"
+    "@valor/nativescript-websockets": "2.0.4",
+    "@nativescript-community/ui-collectionview": "file:../../ui-collectionview/packages/collectionview",
+    "@nativescript-community/ui-pager": "file:../../ui-pager/packages/ui-pager"
   },
   "devDependencies": {
     "@nativescript-community/svelte-native": "file:../dist",
