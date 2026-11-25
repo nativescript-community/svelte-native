@@ -159,6 +159,12 @@ describe('svelteNativePreprocess', () => {
         expect(out).toContain('<script>const __svelteNativeFunctionAttributes');
     });
 
+    it('covers <svelte:element> and property elements with a spread', () => {
+        const out = run(`<script>let rest = {};</script><svelte:element this="collectionview" {...rest} /><page><page.actionBar {...rest} /></page>`);
+        expect(out.match(/\{@attach __svelteNativeFunctionAttributes/g)).toHaveLength(2);
+        compiles(out);
+    });
+
     it('leaves elements without a spread alone', () => {
         const src = `<script>let f = () => {};</script><collectionview itemTemplateSelector={f} />`;
         expect(run(src)).toBe(src);
