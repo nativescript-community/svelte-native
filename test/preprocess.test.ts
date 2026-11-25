@@ -146,6 +146,32 @@ describe('svelteNativePreprocess', () => {
         compiles(out);
     });
 
+    it('re-applies the function attributes of an element with a spread', () => {
+        const out = run(`<script>let { selector, ...rest } = $props();</script><collectionview {...rest} itemTemplateSelector={selector} items={[]} row="2" ontap={() => {}} />`);
+        expect(out).toContain(`{@attach __svelteNativeFunctionAttributes(() => ({ ...(rest), "itemTemplateSelector": selector, "items": [] }))}`);
+        expect(out).toContain('const __svelteNativeFunctionAttributes = (get) => (node) =>');
+        compiles(out);
+    });
+
+    it('re-applies shorthand attributes and works without an instance script', () => {
+        const out = run(`<collectionview {...$$restProps} {items} />`);
+        expect(out).toContain('"items": items');
+        expect(out).toContain('<script>const __svelteNativeFunctionAttributes');
+    });
+
+    it('leaves elements without a spread alone', () => {
+        const src = `<script>let f = () => {};</script><collectionview itemTemplateSelector={f} />`;
+        expect(run(src)).toBe(src);
+    });
+
+    it('combines the function attributes with forwarding in one script', () => {
+        const out = run(`<script>let rest = {};</script><collectionview {...rest} on:tap />`);
+        expect(out.match(/<script>/g)).toHaveLength(1);
+        expect(out).toContain('__svelteNativeDispatch');
+        expect(out).toContain('__svelteNativeFunctionAttributes');
+        compiles(out);
+    });
+
     it('ignores syntax inside script and style blocks', () => {
         const src = `<script lang="ts">const x: Array<string> = []; // <page.foo></script><label bind:this={x} /><style lang="scss">$c: red; label { color: $c; }</style>`;
         const out = run(src);
