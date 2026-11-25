@@ -63,6 +63,8 @@ function module_defs() {
                 },
             ],
             external: (id) =>
+                // the shared renderer is resolved by the externalRenderer plugin, which maps it to the right relative path
+                !id.endsWith("dom/renderer") &&
                 [
                     ...externalModules,
                     ...localModules
