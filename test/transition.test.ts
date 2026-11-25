@@ -122,6 +122,18 @@ describe('transition', () => {
         expect(animations[0].cancelled).toBe(true);
     });
 
+    it('lets the outro run when the effect is torn down after the element was removed', async () => {
+        // Svelte calls the renderer's remove (starting the outro) and only then the attachment's cleanup
+        const { animations, node } = fakeView();
+        mounting = true;
+        const cleanup = fade()(node);
+        const finished = node[outro]();
+        cleanup();
+        expect(animations[0].cancelled).toBe(false);
+        animations[0].finish();
+        await expect(finished).resolves.toBeUndefined();
+    });
+
     it('applies the end state straight away for a view without a native view yet', async () => {
         const { view, animations, node } = fakeView({ nativeViewProtected: undefined });
         fade()(node);

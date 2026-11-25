@@ -82,17 +82,19 @@ export function transition(create: (view: View) => TransitionSpec, { intro = tru
     return (node: NativeViewElementNode<View>) => {
         const view = node.nativeView;
         const spec = create(view);
-        let playing: Playing | null = null;
+        let introPlaying: Playing | null = null;
 
         if (outro) {
             (node as any)[outroKey] = () => {
-                playing?.cancel();
-                return (playing = play(view, spec, 'out')).finished;
+                introPlaying?.cancel();
+                return play(view, spec, 'out').finished;
             };
         }
         if (intro && !isMounting()) {
-            playing = play(view, spec, 'in');
+            introPlaying = play(view, spec, 'in');
         }
-        return () => playing?.cancel();
+        // Svelte tears the effect down after the renderer removed the element, i.e. after the outro
+        // started, so only the intro may be cancelled here.
+        return () => introPlaying?.cancel();
     };
 }
