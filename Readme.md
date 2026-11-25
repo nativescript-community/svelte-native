@@ -109,6 +109,7 @@ Svelte's custom renderer mode does not accept `on:` or element `bind:` directive
 | `<listView bind:this={list}>` | an `{@attach}` that sets and clears `list` |
 | `<page.actionBar>` / `<gridLayout.columns>` | property element on the parent (inside a matching parent element) |
 | `<MyComponent on:done={fn}>` | `$$events`, so `createEventDispatcher` in the child keeps working |
+| `<button on:tap>` / `<MyComponent on:tap>` (forwarding) | re-dispatches the native event to the parent's handlers, which receive the original event |
 
 Two-way bindings work for any property with a matching `<prop>Change` event (`text`, `checked`, `value`, `selectedIndex`, `date`, ...), including Svelte 5 function bindings: `bind:value={() => n, (v) => (n = Math.round(v))}`.
 
@@ -138,7 +139,7 @@ Rows are recycled natively: a row's template is mounted once and its `item`/`ind
 
 ### Not available with the custom renderer
 
-These Svelte features are rejected by the compiler in custom renderer mode: `transition:`/`in:`/`out:`, `animate:`, `{@html}`, `<svelte:head>`, `<svelte:window>`, `<svelte:body>`, `<svelte:document>`, event forwarding (`on:tap` without a handler — pass a callback prop instead), and `|once` on component events. Use the NativeScript animation API (`view.animate()`) through an element ref for animations.
+These Svelte features are rejected by the compiler in custom renderer mode: `transition:`/`in:`/`out:`, `animate:`, `{@html}`, `<svelte:head>`, `<svelte:window>`, `<svelte:body>`, `<svelte:document>`, and `|once` on component events. Use the NativeScript animation API (`view.animate()`) through an element ref for animations.
 
 ### Migrating from svelte-native 1.x (Svelte 4)
 

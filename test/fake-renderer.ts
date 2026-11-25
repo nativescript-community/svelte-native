@@ -4,9 +4,13 @@ export class FakeNode {
     children: FakeNode[] = [];
     parent: FakeNode | null = null;
     attrs: Record<string, any> = {};
+    listeners: Record<string, Function[]> = {};
     constructor(public type: 'fragment' | 'element' | 'text' | 'comment', public name?: string, public text?: string) {}
     setAttribute(key: string, value: any) {
         this.attrs[key] = value;
+    }
+    fire(type: string, event: any = { eventName: type }) {
+        for (const handler of [...(this.listeners[type] ?? [])]) handler(event);
     }
     get elements() {
         return this.children.filter((c) => c.type === 'element');
@@ -54,6 +58,10 @@ export default createRenderer({
     insert,
     remove: detach,
     getParent: (node) => node.parent,
-    addEventListener() {},
-    removeEventListener() {},
+    addEventListener: (node, type, handler) => {
+        (node.listeners[type] ??= []).push(handler);
+    },
+    removeEventListener: (node, type, handler) => {
+        node.listeners[type] = (node.listeners[type] ?? []).filter((h) => h !== handler);
+    },
 });

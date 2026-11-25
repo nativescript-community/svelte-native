@@ -18,6 +18,8 @@ interface MarkupInput {
  * - `bind:text={value}` on an element  → `text={value} ontextChange={(e) => value = e.value}`
  * - `on:tap={handler}` on an element   → `ontap={handler}` (`|once` is honoured, DOM-only modifiers are dropped)
  * - `on:done={handler}` on a component → `$$events={{ done: handler }}`, which `createEventDispatcher` reads
+ * - `on:tap` (no handler) on an element or component → re-dispatches the native event to the handlers the parent
+ *   passed in `$$events`, through a `createEventDispatcher` the preprocessor adds to the component's script
  *
  * Add it after any script/style preprocessors, e.g. `preprocess: [sveltePreprocess(), svelteNativePreprocess()]`.
  */
@@ -30,16 +32,18 @@ export function svelteNativePreprocess() {
             const fail = (message: string) => {
                 throw new Error(`${filename ? `${filename}: ` : ''}${message}`);
             };
+            const ctx: Context = { forwards: false };
             walk(ast.fragment, null, (node, parent) => {
                 if (isPropertyElement(node, parent)) {
                     renameDottedTag(node, content, out);
-                    transformElement(node, content, out, fail);
+                    transformElement(node, content, out, ctx);
                 } else if (node.type === 'RegularElement' || node.type === 'SvelteElement') {
-                    transformElement(node, content, out, fail);
+                    transformElement(node, content, out, ctx);
                 } else if (isComponent(node)) {
-                    transformComponentEvents(node, content, out, fail);
+                    transformComponentEvents(node, content, out, ctx, fail);
                 }
             });
+            if (ctx.forwards) addDispatcher(ast, out);
             if (!out.hasChanged()) return { code: content };
             return {
                 code: out.toString(),
@@ -113,12 +117,17 @@ function isOnce(directive: Node) {
     return (directive.modifiers as string[]).includes('once');
 }
 
+// Collected while walking: whether any `on:event` forwarding needs the dispatcher declared.
+interface Context {
+    forwards: boolean;
+}
+
 interface Handler {
     attr: Node;
     code: string;
 }
 
-function transformElement(node: Node, content: string, out: MagicString, fail: (message: string) => never) {
+function transformElement(node: Node, content: string, out: MagicString, ctx: Context) {
     // Replacement text per directive; handlers for the same event are merged into one attribute.
     const replacements = new Map<Node, string>();
     const handlers = new Map<string, Handler[]>();
@@ -136,14 +145,12 @@ function transformElement(node: Node, content: string, out: MagicString, fail: (
             replacements.set(attr, `${attr.name}={${getter}}`);
             addHandler(`${attr.name}Change`, { attr, code: `(e) => { ${setter}; }` });
         } else if (attr.type === 'OnDirective') {
-            if (!attr.expression) {
-                fail(`event forwarding (\`on:${attr.name}\` without a handler) is not supported on <${node.name}>; pass a callback prop instead`);
-            }
+            const code = attr.expression ? source(content, attr.expression) : forwardEvent(attr.name, ctx);
             if (isOnce(attr)) {
-                replacements.set(attr, rewriteOnceEvent(attr.name, source(content, attr.expression)));
+                replacements.set(attr, rewriteOnceEvent(attr.name, code));
             } else {
                 replacements.set(attr, '');
-                addHandler(attr.name, { attr, code: source(content, attr.expression) });
+                addHandler(attr.name, { attr, code });
             }
         }
     }
@@ -161,20 +168,17 @@ function transformElement(node: Node, content: string, out: MagicString, fail: (
     }
 }
 
-function transformComponentEvents(node: Node, content: string, out: MagicString, fail: (message: string) => never) {
+function transformComponentEvents(node: Node, content: string, out: MagicString, ctx: Context, fail: (message: string) => never) {
     const directives = (node.attributes as Node[]).filter((a) => a.type === 'OnDirective');
     if (!directives.length) return;
 
     const byEvent = new Map<string, string[]>();
     for (const d of directives) {
-        if (!d.expression) {
-            fail(`event forwarding (\`on:${d.name}\` without a handler) is not supported with a custom renderer; pass a callback prop to <${node.name}> instead`);
-        }
         // `$$events` is re-evaluated on every dispatch, so a wrapper could not remember having fired.
         if (isOnce(d)) {
             fail(`\`on:${d.name}|once\` is not supported on components with a custom renderer; guard the handler instead`);
         }
-        byEvent.set(d.name, [...(byEvent.get(d.name) ?? []), source(content, d.expression)]);
+        byEvent.set(d.name, [...(byEvent.get(d.name) ?? []), d.expression ? source(content, d.expression) : forwardEvent(d.name, ctx)]);
     }
 
     const entries = [...byEvent].map(([event, codes]) => `${JSON.stringify(event)}: ${codes.length === 1 ? codes[0] : `[${codes.join(', ')}]`}`);
@@ -214,6 +218,27 @@ function rewriteBindThis(attr: Node, content: string) {
     }
     const target = source(content, expr);
     return `{@attach (node) => { ${target} = node; return () => { if (${target} === node) ${target} = null; }; }}`;
+}
+
+// Svelte's own forwarding is DOM-only (`bubble_event` reads `Event.type`) and `$$props` can't reach
+// `$$events` (the compiler strips it), so forwarding goes through `createEventDispatcher`. The
+// dispatcher is handed the native event under a well-known key and svelte-native's CustomEvent
+// returns that event as-is, so handlers receive the original `EventData` just like in Svelte 4.
+const FORWARDED = `Symbol.for('svelte-native.forwarded-event')`;
+const DISPATCHER = '__svelteNativeDispatch';
+
+function forwardEvent(event: string, ctx: Context) {
+    ctx.forwards = true;
+    return `(e) => ${DISPATCHER}(${JSON.stringify(event)}, { [${FORWARDED}]: e })`;
+}
+
+function addDispatcher(ast: { instance: Node | null }, out: MagicString) {
+    const code = `import { createEventDispatcher as __svelteNativeCreateDispatcher } from 'svelte'; const ${DISPATCHER} = __svelteNativeCreateDispatcher();`;
+    if (ast.instance) {
+        out.appendLeft((ast.instance.content as Node).start, `\n${code}\n`);
+    } else {
+        out.append(`\n<script>${code}</script>\n`);
+    }
 }
 
 function rewriteOnceEvent(event: string, handler: string) {

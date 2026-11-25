@@ -2,6 +2,7 @@ import { registerSvelteElements } from "./svelte-elements";
 import { registerNativeElements } from "./nativescript-elements";
 
 import SvelteNativeDocument from "./svelte/SvelteNativeDocument";
+import { NativeCustomEvent } from "./svelte/NativeCustomEvent";
 import NativeViewElementNode from "./native/NativeViewElementNode";
 import { Trace, View } from "@nativescript/core";
 import { time } from '@nativescript/core/profiling';
@@ -57,16 +58,7 @@ function installGlobalShims(): SvelteNativeDocument {
     }
     
 
-    window.CustomEvent = class {
-        detail: any;
-        eventName: string;
-        type: string;
-        constructor(name: string, detail: any = null) {
-            this.eventName = name; //event name for nativescript
-            this.type = name; // type for svelte
-            this.detail = detail;
-        }
-    };
+    window.CustomEvent = NativeCustomEvent as any;
 
     window.dispatchEvent = function (event: CustomEvent) {
         logger.info(() => `Event dispatched ${event}`);

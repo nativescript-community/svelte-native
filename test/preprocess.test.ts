@@ -66,8 +66,14 @@ describe('svelteNativePreprocess', () => {
         compiles(out);
     });
 
-    it('rejects event forwarding and |once on components', () => {
-        expect(() => run(`<script>import C from './C.svelte';</script><C on:done />`)).toThrow(/callback prop/);
+    it('forwards on: without a handler on components through $$events', () => {
+        const out = run(`<script>import C from './C.svelte'; function f() {}</script><C on:tap on:tap={f} />`);
+        expect(out).toMatch(/\$\$events={{ "tap": \[\(e\) => __svelteNativeDispatch\("tap", .*\), f\] }}/);
+        expect(out).toContain("const __svelteNativeDispatch = __svelteNativeCreateDispatcher();");
+        compiles(out);
+    });
+
+    it('rejects |once on components', () => {
         expect(() => run(`<script>import C from './C.svelte'; function f() {}</script><C on:done|once={f} />`)).toThrow(/once/);
     });
 
@@ -101,8 +107,27 @@ describe('svelteNativePreprocess', () => {
         compiles(out);
     });
 
-    it('rejects event forwarding on native elements', () => {
-        expect(() => run(`<button on:tap />`)).toThrow(/event forwarding/);
+    it('forwards on: without a handler on native elements', () => {
+        const out = run(`<button on:tap on:longPress />`);
+        expect(out).toContain('ontap={(e) => __svelteNativeDispatch("tap", ');
+        expect(out).toContain('onlongPress={(e) => __svelteNativeDispatch("longPress", ');
+        // no instance script to extend, so one is added
+        expect(out).toMatch(/<script>import \{ createEventDispatcher as __svelteNativeCreateDispatcher \}/);
+        compiles(out);
+    });
+
+    it('adds the dispatcher to an existing instance script, once', () => {
+        const out = run(`<script>let a = 0;</script><button on:tap /><button on:longPress />`);
+        expect(out.match(/__svelteNativeCreateDispatcher\(\)/g)).toHaveLength(1);
+        expect(out).toMatch(/<script>\nimport \{ createEventDispatcher/);
+        compiles(out);
+    });
+
+    it('merges forwarding with explicit handlers and |once on the same element', () => {
+        const out = run(`<script>function f() {}</script><button on:tap on:tap={f} /><button on:tap|once />`);
+        expect(out).toContain('ontap={function (e) {');
+        expect(out).toContain('node.removeEventListener("tap", listener)');
+        compiles(out);
     });
 
     it('ignores syntax inside script and style blocks', () => {
