@@ -1,8 +1,8 @@
 import { describe, it, beforeAll, afterAll } from 'vitest';
 import { assert } from '../helpers/assert';
 import { TemplateElement, type NativeViewElementNode } from '@nativescript-community/svelte-native/dom';
-import CollectionViewElement from '@nativescript-community/ui-collectionview/svelte';
-import PagerElement from '@nativescript-community/ui-pager/svelte';
+import CollectionViewElement from '@nativescript-community/ui-collectionview/svelte5';
+import PagerElement from '@nativescript-community/ui-pager/svelte5';
 import type { CollectionView } from '@nativescript-community/ui-collectionview';
 import type { Pager } from '@nativescript-community/ui-pager';
 import type { ContentView, Label, View } from '@nativescript/core';
@@ -75,7 +75,7 @@ for (const list of lists) {
 
             dispose(view);
             assert.equal(template.instanceCount, before, 'a disposed view must not stay tracked by the template');
-            assert.isNull(view.__SvelteTemplateInstance__ ?? null);
+            assert.isNull(view.__Svelte5Instance__ ?? null);
         });
 
         it('keeps views independent', () => {
