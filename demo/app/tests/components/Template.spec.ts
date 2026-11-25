@@ -1,9 +1,10 @@
 import { describe, it, beforeAll, afterAll } from 'vitest';
 import { assert } from '../helpers/assert';
-import { createElement, TemplateProps, type NativeViewElementNode, type ViewNode } from '@nativescript-community/svelte-native/dom';
+import { createElement, render, TemplateElement, TemplateProps, type NativeViewElementNode, type ViewNode } from '@nativescript-community/svelte-native/dom';
 import type { Label } from '@nativescript/core';
 import TemplateHarness from './TemplateHarness.svelte';
 import SnippetTemplateHarness from './SnippetTemplateHarness.svelte';
+import ContextTemplateHarness from './ContextTemplateHarness.svelte';
 import { mountHarness } from '../helpers/mount';
 
 function templateComponent(target: ViewNode) {
@@ -73,5 +74,53 @@ describe('Template', () => {
         assert.equal(labelText(row.target), 'snippet y #2');
         row.unmount();
         host.unmount();
+    });
+
+    describe('TemplateElement.mount', () => {
+        function template() {
+            return target.firstChild as unknown as TemplateElement;
+        }
+
+        it('is exported along with render for plugins that recycle views', () => {
+            assert.isFunction(render);
+            assert.isFunction(template().mount);
+        });
+
+        it('mounts into a target and rebinds the same native view on update', () => {
+            const wrapper = createElement('fragment');
+            const instance = template().mount(wrapper, 'first', 0);
+            const label = wrapper.firstElement();
+            assert.equal(labelText(wrapper), 'test text first #0');
+
+            instance.update('second', 7);
+            assert.strictEqual(wrapper.firstElement(), label, 'the native view should be reused, not re-created');
+            assert.equal(labelText(wrapper), 'test text second #7');
+            instance.unmount();
+        });
+
+        it('stops tracking an instance once it is unmounted', () => {
+            const before = template().instanceCount;
+            const a = template().mount(createElement('fragment'), 'a', 0);
+            const b = template().mount(createElement('fragment'), 'b', 1);
+            assert.equal(template().instanceCount, before + 2);
+
+            a.unmount();
+            assert.equal(template().instanceCount, before + 1);
+            a.unmount();
+            assert.equal(template().instanceCount, before + 1, 'unmounting twice must not change the count');
+
+            template().unmountInstances();
+            assert.equal(template().instanceCount, 0);
+            b.unmount();
+        });
+
+        it('gives instances the context of the component that declared the template', () => {
+            const harness = mountHarness(ContextTemplateHarness);
+            const wrapper = createElement('fragment');
+            const instance = (harness.instance as any).test_subject.mount(wrapper, null, 0);
+            assert.equal(labelText(wrapper), 'from the declaring component');
+            instance.unmount();
+            harness.unmount();
+        });
     });
 });

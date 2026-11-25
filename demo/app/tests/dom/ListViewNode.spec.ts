@@ -46,6 +46,56 @@ describe('ListViewNode', () => {
         assert.equal(textOf(view), 'Even item 2');
     });
 
+    describe('rebinding a recycled row', () => {
+        function recycledRow() {
+            const listView = test_subject.nativeView;
+            const even = (listView.itemTemplates as any[]).find((t) => t.key === 'even');
+            const view = even.createView() as View;
+            const load = (index: number) => listView.notify({ eventName: 'itemLoading', object: listView, index, view } as ItemEventData);
+            load(0);
+            const label = (view as any).getChildAt(0) as Label;
+            // views that are not loaded hold their native updates until they load, which would hide the batching
+            (view as any).callLoaded();
+
+            // how many times each view applies its batched native updates
+            const resumed = { wrapper: 0, label: 0 };
+            for (const [name, target] of [['wrapper', view], ['label', label]] as const) {
+                const original = (target as any).onResumeNativeUpdates;
+                (target as any).onResumeNativeUpdates = function (...args: any[]) {
+                    resumed[name]++;
+                    return original.apply(this, args);
+                };
+            }
+            return { view, label, load, resumed, done: () => (view as any).callUnloaded() };
+        }
+
+        it('applies the update as one batch of native updates', () => {
+            const { label, load, resumed, done } = recycledRow();
+            load(2);
+            assert.equal(label.text, 'Even item 2');
+            assert.equal(resumed.wrapper, 1, 'the wrapper resumes once, after the whole update');
+            assert.equal(resumed.label, 1, 'the label resumes once, after the whole update');
+            done();
+        });
+
+        it('leaves the row not suspended afterwards', () => {
+            const { view, label, load, done } = recycledRow();
+            const before = [view, label].map((v) => (v as any)._suspendNativeUpdatesCount);
+            load(2);
+            assert.equal([view, label].map((v) => (v as any)._suspendNativeUpdatesCount).join(), before.join());
+            done();
+        });
+
+        it('does no native work when rebound to the item it already shows', () => {
+            const { label, load, resumed, done } = recycledRow();
+            load(0);
+            assert.equal(label.text, 'Even item 0');
+            assert.equal(resumed.wrapper, 0);
+            assert.equal(resumed.label, 0);
+            done();
+        });
+    });
+
     it('unmounts rows along with the list', () => {
         const listView = test_subject.nativeView;
         const odd = (listView.itemTemplates as any[]).find((t) => t.key === 'odd');

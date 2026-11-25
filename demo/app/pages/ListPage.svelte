@@ -1,4 +1,4 @@
-<gridLayout rows="auto, auto, *">
+<gridLayout rows="auto, auto, auto, *">
     <stackLayout row="0" class="p-4">
         <label text="ListView + Template" class="text-2xl font-bold text-purple-800" />
         <label text={`${items.length} rows, recycled natively. Tap a row to open it in a modal.`} textWrap={true} class="text-sm text-gray-600" />
@@ -12,8 +12,13 @@
         <button col="3" text="Top" class="bg-purple-700 text-white rounded-lg m-1" on:tap={scrollTop} />
     </gridLayout>
 
+    <gridLayout row="2" columns="*, *" class="px-4 mb-2">
+        <button col="0" text="Refresh" class="bg-purple-700 text-white rounded-lg m-1" ontap={refresh} />
+        <button col="1" text="Mutate #0 in place" class="bg-purple-700 text-white rounded-lg m-1" ontap={mutateFirst} />
+    </gridLayout>
+
     {#if keyed}
-        <listView row="2" bind:this={list} {items} itemTemplateSelector={(item) => (item.id % 2 ? 'odd' : 'even')} onitemTap={open}>
+        <listView row="3" bind:this={list} {items} itemTemplateSelector={(item) => (item.id % 2 ? 'odd' : 'even')} onitemTap={open}>
             <Template key="even" let:item>
                 <label text={`even · ${item.name}`} class="p-4 text-base text-gray-800" />
             </Template>
@@ -24,7 +29,7 @@
             </Template>
         </listView>
     {:else}
-        <listView row="2" bind:this={list} {items} onitemTap={open}>
+        <listView row="3" bind:this={list} {items} onitemTap={open}>
             <Template let:item let:index>
                 <gridLayout columns="auto, *, auto" class="p-4">
                     <label col="0" text={`#${index}`} class="text-gray-400 w-12" />
@@ -52,6 +57,16 @@
 
     function scrollTop() {
         list?.nativeView.scrollToIndexAnimated(0);
+    }
+
+    // rebinds every visible row, as after a change the list can't see
+    function refresh() {
+        list?.nativeView.refresh();
+    }
+
+    // items is deeply reactive, so the visible row updates without any rebind
+    function mutateFirst() {
+        items[0].likes++;
     }
 
     function shuffle() {
