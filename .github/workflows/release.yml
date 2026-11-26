@@ -1,0 +1,149 @@
+# Publishes @nativescript-community/svelte-native to npm, tags the release and writes the changelog.
+#
+# Run it from the branch to release (Actions > Release > "Use workflow from"):
+#   - default branch: bumps from the highest version tag reachable from it. Stable releases go to the `latest`
+#     npm tag, prereleases to their identifier (`rc`, `beta`...).
+#   - `N.x` (e.g. `4.x`, the Svelte 4 line): stays on major N, only patch / prerelease bumps, published under
+#     the `svelteN` npm tag, never `latest`. The first release of the line is N.0.0.
+# The version rules live in scripts/release-version.mjs (unit tested in test/release-version.test.ts).
+#
+# Publishing uses npm trusted publishing (OIDC, configure the package on npmjs.com with this workflow file name),
+# or the NPM_TOKEN secret when it is set.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump from the last tag (patch also finishes a prerelease: 5.0.0-rc.1 -> 5.0.0)'
+        type: choice
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+          - prerelease
+      preid:
+        description: 'Make it a prerelease with this identifier (rc, beta, alpha...). Empty for a stable release'
+        type: string
+        required: false
+      version:
+        description: 'Exact version, overrides the bump (e.g. 5.0.0-rc.1, or 4.0.0 on 4.x)'
+        type: string
+        required: false
+      npm_tag:
+        description: 'Override the npm dist-tag (default is derived from the branch and the version)'
+        type: string
+        required: false
+      dry_run:
+        description: 'Compute and build everything, but do not publish, push or create the GitHub release'
+        type: boolean
+        default: false
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the tags decide the next version and the changelog range
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Update npm (trusted publishing needs npm >= 11.5.1)
+        run: npm install -g npm@latest
+
+      - name: Install
+        run: npm ci
+
+      - name: Next version
+        id: next
+        env:
+          BRANCH: ${{ github.ref_name }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          BUMP: ${{ inputs.bump }}
+          PREID: ${{ inputs.preid }}
+          VERSION: ${{ inputs.version }}
+          NPM_TAG: ${{ inputs.npm_tag }}
+        run: node scripts/release-version.mjs
+
+      - name: Test
+        run: npm test --if-present
+
+      - name: Version, changelog, commit and tag
+        env:
+          VERSION: ${{ steps.next.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          npx standard-version --release-as "$VERSION"
+
+      - name: Build
+        run: npm run build
+
+      - name: NPM identity (token fallback)
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -n "$NPM_TOKEN" ]; then
+            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > "$HOME/.npmrc"
+          else
+            echo "NPM_TOKEN not set, using npm trusted publishing (OIDC)"
+          fi
+
+      - name: Publish
+        working-directory: dist
+        env:
+          NPM_TAG: ${{ steps.next.outputs.npmTag }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          flags=()
+          [ "$DRY_RUN" = "true" ] && flags+=(--dry-run)
+          npm publish --tag "$NPM_TAG" --access public --provenance "${flags[@]}"
+
+      - name: Push the release commit and tag
+        if: ${{ !inputs.dry_run }}
+        env:
+          TAG: ${{ steps.next.outputs.tag }}
+        run: git push --atomic origin "HEAD:refs/heads/${{ github.ref_name }}" "refs/tags/$TAG"
+
+      - name: GitHub release
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.next.outputs.tag }}
+          VERSION: ${{ steps.next.outputs.version }}
+          PRERELEASE: ${{ steps.next.outputs.prerelease }}
+          IS_DEFAULT: ${{ github.ref_name == github.event.repository.default_branch }}
+        run: |
+          # the section standard-version wrote for this version
+          awk -v v="[$VERSION]" '/^##+ \[/ { if (found) exit; found = index($0, v) } found' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+          flags=()
+          [ "$PRERELEASE" = "true" ] && flags+=(--prerelease)
+          if [ "$IS_DEFAULT" = "true" ] && [ "$PRERELEASE" != "true" ]; then flags+=(--latest); else flags+=(--latest=false); fi
+          if [ -s "$RUNNER_TEMP/notes.md" ]; then flags+=(--notes-file "$RUNNER_TEMP/notes.md"); else flags+=(--generate-notes); fi
+          gh release create "$TAG" --title "$TAG" "${flags[@]}"
+
+      - name: Summary
+        env:
+          VERSION: ${{ steps.next.outputs.version }}
+          NPM_TAG: ${{ steps.next.outputs.npmTag }}
+          BASE: ${{ steps.next.outputs.base }}
+        run: |
+          {
+            echo "### ${{ inputs.dry_run && 'Dry run: would release' || 'Released' }} \`$VERSION\`"
+            echo "- npm tag: \`$NPM_TAG\`"
+            echo "- from: \`v$BASE\` on \`${{ github.ref_name }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
