@@ -8,11 +8,11 @@ Svelte 5 support, built on Svelte's official custom renderer API (`svelte@^5.59.
 
 ### ⚠ BREAKING CHANGES
 
-* Requires `svelte@^5.59.0`; Svelte 3/4 projects should stay on 1.x.
+* Requires `svelte@^5.59.0`; Svelte 3/4 projects should stay on 1.x (maintenance branch `4.x`).
 * Components are compiled with `compilerOptions.experimental.customRenderer: "@nativescript-community/svelte-native/dom/renderer"`, and `svelteNativePreprocess()` from `@nativescript-community/svelte-native/preprocess` replaces `svelte-native-preprocessor`.
-* `transition:`/`in:`/`out:`, `animate:`, `{@html}` and `<svelte:head|window|body|document>` are not supported by Svelte in custom renderer mode.
+* `animate:`, `{@html}` and `<svelte:head|window|body|document>` are not supported by Svelte in custom renderer mode. `transition:`/`in:`/`out:` are rejected too, and replaced by native transitions (see Features).
 * `navigate()`/`showModal()` return the component's exports with `unmount()` (`$destroy()` remains as an alias); `$set`/`$on` are gone.
-* Event forwarding (`on:x` without a handler) and `|once` on component events are not supported.
+* `|once` on component events is not supported.
 
 ### Features
 
@@ -21,6 +21,9 @@ Svelte 5 support, built on Svelte's official custom renderer API (`svelte@^5.59.
 * `<Template>` supports `let:item`/`let:index` and `{#snippet children({ item, index })}`; ListView rows are mounted once, updated in place when recycled (including mutated items), see the declaring component's context, and are unmounted with their template.
 * `TemplateProps` helper for plugins with natively recycled views.
 * `once` event listener option.
+* Event forwarding (`on:tap` without a handler) on elements and components, through a `createEventDispatcher` the preprocessor adds to the component.
+* Native transitions, `@nativescript-community/svelte-native/transitions`: `fade`, `fly`, `slide`, `scale` and `transition()` used as `{@attach}`, running one `view.animate()` for the intro and, once the element's own block removes it, the outro. Options `delay`, `duration`, `easing`, `intro`, `outro`, `collapse`. `transition:`/`in:`/`out:` with these functions are rewritten to attachments by `svelteNativePreprocess()`.
+* `TemplateElement.mount()` and in-place updates of recycled rows batched into one native layout request.
 
 ### Bug Fixes
 
@@ -28,6 +31,7 @@ Svelte 5 support, built on Svelte's official custom renderer API (`svelte@^5.59.
 * `showModal()` without a root `Frame`.
 * Errors thrown while creating the root view are logged instead of leaving a blank screen.
 * `checked` bindings on `<switch>`.
+* Function-valued attributes (e.g. `itemTemplateSelector` of a `collectionview`) on an element with `{...spread}`: Svelte drops them under a custom renderer, the preprocessor re-applies them with an `{@attach}`.
 
 ### [1.0.32](https://github.com/nativescript-community/svelte-native/compare/v1.0.31...v1.0.32) (2025-12-28)
 

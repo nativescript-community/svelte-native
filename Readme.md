@@ -21,7 +21,7 @@ Svelte Native includes Svelte specific integrations such as
 | svelte-native | Svelte | NativeScript |
 | --- | --- | --- |
 | 5.x | `^5.59.0` | 8.x / 9.x |
-| 1.x | 3.x / 4.x | 8.x |
+| 1.x (branch [`4.x`](https://github.com/nativescript-community/svelte-native/tree/4.x)) | 3.x / 4.x | 8.x |
 
 ## Installation
 
@@ -113,6 +113,8 @@ Svelte's custom renderer mode does not accept `on:` or element `bind:` directive
 
 Two-way bindings work for any property with a matching `<prop>Change` event (`text`, `checked`, `value`, `selectedIndex`, `date`, ...), including Svelte 5 function bindings: `bind:value={() => n, (v) => (n = Math.round(v))}`.
 
+Svelte drops function values from an element's `{...spread}` when a custom renderer is active (a native property such as `itemTemplateSelector` is a function). For elements that have a spread, the preprocessor adds an `{@attach}` that re-applies those functions, whether they come from the spread or sit next to it.
+
 ### ListView and Template
 
 ```svelte
@@ -136,6 +138,10 @@ Two-way bindings work for any property with a matching `<prop>Change` event (`te
 ```
 
 Rows are recycled natively: a row's template is mounted once and its `item`/`index` are updated in place when the row is reused. Plugin authors can use the exported `TemplateProps` helper from `@nativescript-community/svelte-native/dom` for other recycling views.
+
+### Plugins
+
+Plugins that ship a Svelte binding publish the Svelte 5 one next to the Svelte 4 one, in a `svelte5` folder, e.g. `import CollectionViewElement from '@nativescript-community/ui-collectionview/svelte5'; CollectionViewElement.register();` (also `ui-pager`, `ui-popover`, `ui-bottomsheet`, `ui-appbar`). Plugin authors can build `svelte/` and `svelte5/` side by side, see `plugin-seed-tools`' `tsconfig.svelte5.json`.
 
 ### Not available with the custom renderer
 
