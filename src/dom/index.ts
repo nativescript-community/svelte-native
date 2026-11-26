@@ -2,13 +2,16 @@ import { registerSvelteElements } from "./svelte-elements";
 import { registerNativeElements } from "./nativescript-elements";
 
 import SvelteNativeDocument from "./svelte/SvelteNativeDocument";
+import { NativeCustomEvent } from "./svelte/NativeCustomEvent";
 import NativeViewElementNode from "./native/NativeViewElementNode";
 import { Trace, View } from "@nativescript/core";
 import { time } from '@nativescript/core/profiling';
 import { logger, LogLevel } from "./basicdom";
 
 export { default as HeadElement } from "./svelte/HeadElement";
-export { default as TemplateElement } from "./svelte/TemplateElement";
+export { default as TemplateElement, TemplateInstance } from "./svelte/TemplateElement";
+export { render, RenderResult, isMounting } from "./renderer";
+export { TemplateProps, TemplateItemProps } from "./svelte/TemplateProps";
 export { default as SvelteNativeDocument } from "./svelte/SvelteNativeDocument";
 export { default as StyleElement } from "./svelte/StyleElement";
 
@@ -34,7 +37,7 @@ function installGlobalShims(): SvelteNativeDocument {
     window.window = global;
     window.document = new SvelteNativeDocument();
 
-    if (global.__SVELTE_USE_REQUESTANIMATIONFRAME_OVERRIDE__ !== false) {
+    if ((global as any).__SVELTE_USE_REQUESTANIMATIONFRAME_OVERRIDE__ !== false) {
         // we still need this as of N 9 as the android runtime does not return the same kind of values
         // for window.performance.now() and requestAnimationFrame value. So they are not comparable
         Object.defineProperty(global, 'requestAnimationFrame', {
@@ -56,16 +59,7 @@ function installGlobalShims(): SvelteNativeDocument {
     }
     
 
-    window.CustomEvent = class {
-        detail: any;
-        eventName: string;
-        type: string;
-        constructor(name: string, detail: any = null) {
-            this.eventName = name; //event name for nativescript
-            this.type = name; // type for svelte
-            this.detail = detail;
-        }
-    };
+    window.CustomEvent = NativeCustomEvent as any;
 
     window.dispatchEvent = function (event: CustomEvent) {
         logger.info(() => `Event dispatched ${event}`);

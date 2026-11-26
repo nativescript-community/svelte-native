@@ -1,9 +1,13 @@
-const svelteNativePreprocessor = require('svelte-native-preprocessor')
 const sveltePreprocess = require("svelte-preprocess");
+const { svelteNativePreprocess } = require("@nativescript-community/svelte-native/preprocess");
 
 module.exports = {
   compilerOptions: {
-    namespace: "foreign"
+    css: 'external',
+    experimental: {
+      customRenderer: "@nativescript-community/svelte-native/dom/renderer"
+    }
   },
-  preprocess: [sveltePreprocess(), svelteNativePreprocessor()] 
+  // verbatimModuleSyntax keeps imports that are only referenced from markup
+  preprocess: [sveltePreprocess({ typescript: { compilerOptions: { verbatimModuleSyntax: true } } }), svelteNativePreprocess()]
 };

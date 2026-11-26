@@ -1,11 +1,10 @@
 import { svelteNativeNoFrame } from "@nativescript-community/svelte-native";
-import RadSideDrawerElement from "@nativescript-community/svelte-native-nativescript-ui/sidedrawer"
-
-RadSideDrawerElement.register();
-
-//import * as trace from "@nativescript/core/trace"
-//trace.enable();
-//trace.addCategories(DomTraceCategory);
-
+import CollectionViewElement from "@nativescript-community/ui-collectionview/svelte5";
+import PagerElement from "@nativescript-community/ui-pager/svelte5";
+import "./globals";
 import App from "./App.svelte";
-svelteNativeNoFrame(App as typeof SvelteComponent, {});
+
+CollectionViewElement.register();
+PagerElement.register();
+
+svelteNativeNoFrame(App, {});

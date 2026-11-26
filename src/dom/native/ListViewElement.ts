@@ -1,7 +1,17 @@
 import { ListView, ItemEventData, ItemsSource, View } from '@nativescript/core'
-import TemplateElement from '../svelte/TemplateElement';
-import { createElement, DocumentNode, logger as log, registerElement, ViewNode } from '../basicdom';
+import TemplateElement, { TemplateInstance } from '../svelte/TemplateElement';
+import { createElement, logger as log, registerElement, ViewNode } from '../basicdom';
 import NativeViewElementNode from './NativeViewElementNode';
+import { batchNativeUpdates } from './batchNativeUpdates';
+
+interface SvelteItemView extends View {
+    __SvelteComponentBuilder__?: ((item: any, index: number) => void) | null;
+    __SvelteTemplateInstance__?: TemplateInstance;
+}
+
+function mountItem(view: SvelteItemView, wrapper: ViewNode, template: TemplateElement, item: any, index: number) {
+    view.__SvelteTemplateInstance__ = template.mount(wrapper, item, index);
+}
 
 export class SvelteKeyedTemplate {
     _key: string;
@@ -21,25 +31,22 @@ export class SvelteKeyedTemplate {
     }
 
     createView(): View {
-        //create a proxy element to eventually contain our item (once we have one to render)
-        //TODO is StackLayout the best choice here? 
+        // The item isn't known yet, so mounting is deferred until the first itemLoading for this view.
         log.debug(() => `creating view for key ${this.key}`)
         let wrapper = createElement('StackLayout', this._templateEl.ownerDocument) as NativeViewElementNode<View>;
         wrapper.setStyle("padding", 0)
         wrapper.setStyle("margin", 0)
-        let nativeEl = wrapper.nativeView;
-        (nativeEl as any).__SvelteComponentBuilder__ = (props: any) => {
-            let instance = new this.component({
-                target: wrapper,
-                props: props
-            });
-            (nativeEl as any).__SvelteComponent__ = instance;
+        let nativeEl = wrapper.nativeView as SvelteItemView;
+        nativeEl.__SvelteComponentBuilder__ = (item: any, index: number) => {
+            if (typeof this.component !== 'function') {
+                log.error(() => `Template component for key '${this.key}' is not available yet`);
+                return;
+            }
+            mountItem(nativeEl, wrapper, this._templateEl, item, index);
         }
         return nativeEl;
     }
 }
-
-
 
 export default class ListViewElement extends NativeViewElementNode<ListView> {
     constructor() {
@@ -63,42 +70,36 @@ export default class ListViewElement extends NativeViewElementNode<ListView> {
             item = (items as any)[args.index]
         }
 
-        if (!args.view || !(args.view as any).__SvelteComponent__) {
-            let component;
+        let view = args.view as SvelteItemView;
 
-            if (args.view && (args.view as any).__SvelteComponentBuilder__) {
-                log.debug(() => `instantiating component in keyed view item at ${args.index}`);
-                //now we have an item, we can create and mount this component
-                (args.view as any).__SvelteComponentBuilder__({ item });
-                (args.view as any).__SvelteComponentBuilder__ = null; //free the memory
-                return;
-            }
-
-            log.debug(() => `creating default view for item at ${args.index}`)
-            if (typeof listView.itemTemplates == "object") {
-                component = listView.itemTemplates.filter(x => x.key == "default").map(x => (x as SvelteKeyedTemplate).component)[0]
-            }
-
-            if (!component) {
-                log.error(() => `Couldn't determine component to use for item at ${args.index}`);
-                return;
-            }
-            let wrapper = createElement('ProxyViewContainer', this.ownerDocument) as NativeViewElementNode<View>;
-            let componentInstance = new component({
-                target: wrapper,
-                props: {
-                    item
-                }
-            });
-
-            let nativeEl = wrapper.nativeView;
-            (nativeEl as any).__SvelteComponent__ = componentInstance;
-            args.view = nativeEl;
-        } else {
-            let componentInstance: SvelteComponent = (args.view as any).__SvelteComponent__
-            log.debug(() => `updating view for ${args.index} which is a ${args.view}`)
-            componentInstance.$set({ item })
+        if (view?.__SvelteTemplateInstance__) {
+            log.debug(() => `updating view for ${args.index} which is a ${view}`)
+            const instance = view.__SvelteTemplateInstance__;
+            batchNativeUpdates(view, () => instance.update(item, args.index));
+            return;
         }
+
+        if (view?.__SvelteComponentBuilder__) {
+            log.debug(() => `instantiating component in keyed view item at ${args.index}`);
+            view.__SvelteComponentBuilder__(item, args.index);
+            view.__SvelteComponentBuilder__ = null;
+            return;
+        }
+
+        log.debug(() => `creating default view for item at ${args.index}`)
+        let template: TemplateElement;
+        if (typeof listView.itemTemplates == "object") {
+            template = listView.itemTemplates.filter(x => x.key == "default").map(x => (x as SvelteKeyedTemplate)._templateEl)[0]
+        }
+
+        if (typeof template?.component !== 'function') {
+            log.error(() => `Couldn't determine component to use for item at ${args.index}`);
+            return;
+        }
+        let wrapper = createElement('ProxyViewContainer', this.ownerDocument) as NativeViewElementNode<View>;
+        let nativeEl = wrapper.nativeView as SvelteItemView;
+        mountItem(nativeEl, wrapper, template, item, args.index);
+        args.view = nativeEl;
     }
 
     onInsertedChild(childNode: ViewNode, index: number) {
@@ -116,6 +117,7 @@ export default class ListViewElement extends NativeViewElementNode<ListView> {
     onRemovedChild(childNode: ViewNode) {
         super.onRemovedChild(childNode);
         if (childNode instanceof TemplateElement) {
+            childNode.unmountInstances();
             let key = childNode.getAttribute('key') || "default"
             if (this.nativeView.itemTemplates && typeof this.nativeView.itemTemplates != "string") {
                 this.nativeView.itemTemplates = this.nativeView.itemTemplates.filter(t => t.key != key);

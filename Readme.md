@@ -8,64 +8,174 @@ See https://svelte-native.technology for docs and tutorials
 
 ## Features
 
-Svelte-Native includes Svelte specific integrations such as
+Svelte Native includes Svelte specific integrations such as
 
- * The ability to use svelte components to create native applications on top of NativeScript core
+ * Svelte 5 components (runes or legacy syntax) rendering real NativeScript views through Svelte's official custom renderer API
  * Svelte specific navigation and modals eg `navigate({ page: MySvelteComponent })`
- * Integration with svelte's transistions eg `<label transition:fade="{duration: 2000}">`
- * Integration with sveltes scoped styles
- * Complete coverage of the Nativescript core UI modules
- * Uses unmodified Svelte and Nativescript modules
+ * Natively recycled `ListView` rows via `<Template>` (with `let:item` or a `{#snippet}`)
+ * Integration with Svelte's scoped styles
+ * Complete coverage of the NativeScript core UI modules
 
-## Work In Progress
+## Requirements
 
-While Svelte Native is feature complete, there are some items outstanding to bring it to the level of other Nativescript library integrations
-
- - [x] At least 1 emoji in readme.md :+1:
- - [ ] More Tests 😳 [#54](https://github.com/nativescript-community/svelte-native/issues/54)
- 
+| svelte-native | Svelte | NativeScript |
+| --- | --- | --- |
+| 5.x | `^5.59.0` | 8.x / 9.x |
+| 1.x (branch [`4.x`](https://github.com/nativescript-community/svelte-native/tree/4.x)) | 3.x / 4.x | 8.x |
 
 ## Installation
 
-You can get started developing with this using the latest template
-
 ```bash
-$ npm install -g nativescript
-$ tns create myapp --template @nativescript/template-blank-svelte
+npm install @nativescript-community/svelte-native svelte@^5.59.0
+npm install -D svelte-loader svelte-preprocess
 ```
 
-A fresh Svelte Native app will be found in the `myapp` folder
+`svelte.config.js`:
 
-Once installed use the `tns preview`, `tns build` or `tns run` commands as for a normal NativeScript application. 
+```js
+const sveltePreprocess = require("svelte-preprocess");
+const { svelteNativePreprocess } = require("@nativescript-community/svelte-native/preprocess");
+
+module.exports = {
+  compilerOptions: {
+    css: "external",
+    experimental: {
+      customRenderer: "@nativescript-community/svelte-native/dom/renderer"
+    }
+  },
+  // svelteNativePreprocess must come after script/style preprocessors;
+  // verbatimModuleSyntax keeps imports that are only referenced from markup in lang="ts" components
+  preprocess: [sveltePreprocess({ typescript: { compilerOptions: { verbatimModuleSyntax: true } } }), svelteNativePreprocess()]
+};
+```
+
+`@nativescript/webpack` releases that detect Svelte 5 need no further configuration. With an older release, resolve Svelte's client runtime through the `svelte-custom-renderer` condition in `webpack.config.js`:
+
+```js
+const webpack = require("@nativescript/webpack");
+
+module.exports = (env) => {
+  webpack.init(env);
+  webpack.chainWebpack((config) => {
+    config.resolve.alias.delete("svelte$");
+    // Svelte's requestAnimationFrame loop (svelte/motion) needs esm-env's BROWSER flag.
+    config.module.rule("svelte-esm-env").test(/[\\/]node_modules[\\/]esm-env[\\/]/).resolve.set("conditionNames", ["browser", "..."]);
+  });
+  webpack.mergeWebpack({ resolve: { conditionNames: ["svelte-custom-renderer", "svelte", "..."] } });
+  return webpack.resolveConfig();
+};
+```
+
+See [`demo/`](demo) for a complete project.
 
 ## Usage
 
 App.svelte
-```html
+```svelte
 <page>
-    <actionBar title="Svelte Native"></actionBar>
+    <actionBar title="Svelte Native" />
     <stackLayout>
-        <label text={msg}></label>
-        <button text="Change" on:tap="{toggle}"></button>
+        <label text={msg} />
+        <textField bind:text={msg} />
+        <button text="Change" ontap={toggle} />
     </stackLayout>
 </page>
 
 <script>
-  export let msg = 'Hello World!'
-  const toggle = () => {
-      msg = "Hi from svelte"
-  }
+  let { msg = 'Hello World!' } = $props();
+  const toggle = () => (msg = 'Hi from svelte');
 </script>
 ```
 
-Main.ts
+app.ts
 ```js
-import App from './components/App.svelte';
+import App from './App.svelte';
+import { svelteNativeNoFrame } from '@nativescript-community/svelte-native';
 
-import { svelteNative } from '@nativescript-community/svelte-native'
-
-svelteNative(App, {msg: "Hi from launcher"});
+svelteNativeNoFrame(App, { msg: 'Hi from launcher' });
 ```
+
+Use `svelteNative(StartPage, props)` instead to start inside a root `Frame` so `navigate()` and `goBack()` work.
+
+### Events, bindings and property elements
+
+Svelte's custom renderer mode does not accept `on:` or element `bind:` directives, and parses `<parent.prop>` as a component. `svelteNativePreprocess()` rewrites these on NativeScript elements, so existing markup keeps working:
+
+| You write | Compiled as |
+| --- | --- |
+| `<button ontap={fn}>` | used as-is (preferred) |
+| `<button on:tap={fn}>` | `ontap={fn}` (`\|once` supported, DOM-only modifiers ignored) |
+| `<textField bind:text={value}>` | `text={value}` + `ontextChange` that writes `value` |
+| `<listView bind:this={list}>` | an `{@attach}` that sets and clears `list` |
+| `<page.actionBar>` / `<gridLayout.columns>` | property element on the parent (inside a matching parent element) |
+| `<MyComponent on:done={fn}>` | `$$events`, so `createEventDispatcher` in the child keeps working |
+| `<button on:tap>` / `<MyComponent on:tap>` (forwarding) | re-dispatches the native event to the parent's handlers, which receive the original event |
+
+Two-way bindings work for any property with a matching `<prop>Change` event (`text`, `checked`, `value`, `selectedIndex`, `date`, ...), including Svelte 5 function bindings: `bind:value={() => n, (v) => (n = Math.round(v))}`.
+
+Svelte drops function values from an element's `{...spread}` when a custom renderer is active (a native property such as `itemTemplateSelector` is a function). For elements that have a spread, the preprocessor adds an `{@attach}` that re-applies those functions, whether they come from the spread or sit next to it.
+
+### ListView and Template
+
+```svelte
+<listView {items} onitemTap={(e) => open(items[e.index])}>
+  <Template let:item let:index>
+    <label text="{index}: {item.name}" />
+  </Template>
+</listView>
+
+<!-- or with a snippet, and keyed templates -->
+<listView {items} itemTemplateSelector={(item) => (item.done ? 'done' : 'todo')}>
+  <Template key="todo">
+    {#snippet children({ item })}<label text={item.name} />{/snippet}
+  </Template>
+  <Template key="done" let:item><label text={item.name} class="line-through" /></Template>
+</listView>
+
+<script>
+  import { Template } from '@nativescript-community/svelte-native/components';
+</script>
+```
+
+Rows are recycled natively: a row's template is mounted once and its `item`/`index` are updated in place when the row is reused. Plugin authors can use the exported `TemplateProps` helper from `@nativescript-community/svelte-native/dom` for other recycling views.
+
+### Plugins
+
+Plugins that ship a Svelte binding publish the Svelte 5 one next to the Svelte 4 one, in a `svelte5` folder, e.g. `import CollectionViewElement from '@nativescript-community/ui-collectionview/svelte5'; CollectionViewElement.register();` (also `ui-pager`, `ui-popover`, `ui-bottomsheet`, `ui-appbar`). Plugin authors can build `svelte/` and `svelte5/` side by side, see `plugin-seed-tools`' `tsconfig.svelte5.json`.
+
+### Not available with the custom renderer
+
+These Svelte features are rejected by the compiler in custom renderer mode: `animate:`, `{@html}`, `<svelte:head>`, `<svelte:window>`, `<svelte:body>`, `<svelte:document>`, and `|once` on component events. For animations use the native transitions below.
+
+### Transitions
+
+Svelte's `transition:` directives are rejected under a custom renderer, so transitions are attachments that run one native animation (`view.animate()`):
+
+```svelte
+<script>
+  import { fade, fly, slide, scale } from '@nativescript-community/svelte-native/transitions';
+</script>
+
+{#if open}
+  <label text="Hello" {@attach fade({ duration: 300 })} />
+{/if}
+
+{#each rows as row (row.id)}
+  <gridLayout {@attach fly({ x: 120, duration: 250, intro: false })}>...</gridLayout>
+{/each}
+```
+
+* `transition:fade={{ duration: 300 }}` in existing markup is rewritten to `{@attach fade({ duration: 300 })}` by `svelteNativePreprocess`, so Svelte 4 templates that import these functions need no change.
+* The intro plays when the element is added after its component was mounted, never during the initial mount.
+* The outro plays when the element's own block removes it (`{#if}` turning false, a keyed `{#each}` item leaving). The element stays on screen until the outro is done. Elements that leave together with an ancestor are removed straight away, so transitions are local like Svelte's default.
+* Options: `delay`, `duration`, `easing` (a `CoreTypes.AnimationCurve` or one of `easings`), `intro`, `outro`. `transition(create, options)` builds your own from a function returning `{ delay, duration, curve, props(t) }`, where `props(t)` gives the native animation values for progress `t` (0 hidden, 1 shown).
+* They animate native properties (`opacity`, `translate`, `scale`), not layout: siblings move when the element is finally removed.
+
+### Migrating from svelte-native 1.x (Svelte 4)
+
+ * Configure `svelte.config.js` as above, and replace `svelte-native-preprocessor` with `svelteNativePreprocess()`.
+ * `navigate()`/`showModal()` accept Svelte 5 components; the returned instance exposes the component's exports and `unmount()` (`$destroy()` is kept as an alias). `$set`/`$on` no longer exist; pass reactive props or callback props instead.
+ * `transition:`, `in:` and `out:` keep working when the function is one of the transitions below: the preprocessor rewrites `transition:fade={{ duration: 200 }}` to `{@attach fade({ duration: 200 })}`, and `in:`/`out:` pass `outro: false`/`intro: false`. A transition of your own must be written as an attachment factory (see `transition()`). `animate:` has no replacement.
 
 ## Examples
 

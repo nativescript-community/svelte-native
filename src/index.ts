@@ -1,47 +1,52 @@
 import { Application, View } from '@nativescript/core';
 import { navigate, ViewNode, createElement, initializeDom, FrameElement, NativeElementNode } from './dom';
 import { DocumentNode } from './dom/basicdom';
-import type {SvelteComponent} from './ambient.js';
+import { render } from './dom/renderer';
 
 // Override this function as the default is currently resetting entire content on NativeScript
 global.__onLiveSyncCore = () => {
     Application.getRootView()?._onCssStateChange();
 };
 
-export function svelteNativeNoFrame<T>(rootElement: typeof SvelteComponent<T>, data: T): Promise<SvelteComponent<T>> {
+export function svelteNativeNoFrame<T>(rootElement: any, data: T): Promise<any> {
     return new Promise((resolve, reject) => {
 
-        let elementInstance: SvelteComponent;
+        let unmountFn: (() => void) | null;
+        let componentExports: any;
 
         const buildElement = () => {
             let frag = createElement('fragment', window.document as unknown as DocumentNode);
-            elementInstance = new rootElement({
+            const result = render(rootElement, {
                 target: frag,
                 props: data || {}
-            })
+            });
+            componentExports = result.component;
+            unmountFn = result.unmount;
             return (frag.firstChild as NativeElementNode<View>).nativeElement;
         }
 
         //wait for launch before returning
         Application.on(Application.launchEvent, () => {
-            resolve(elementInstance);
+            resolve(componentExports);
         })
         Application.on(Application.exitEvent, () => {
-            elementInstance.$destroy();
-            elementInstance = null;
+            if (unmountFn) {
+                unmountFn();
+                unmountFn = null;
+            }
         })
 
         try {
-            Application.run({ create: buildElement });
+            Application.run({ create: reportingErrors(buildElement) });
         } catch (e) {
             reject(e);
         }
     });
 }
 
-export function svelteNative<T>(startPage: typeof SvelteComponent<T>, data: T): Promise<SvelteComponent<T>> {
-    let rootFrame: FrameElement; 
-    let pageInstance: SvelteComponent;
+export function svelteNative<T>(startPage: any, data: T): Promise<any> {
+    let rootFrame: FrameElement;
+    let pageInstance: any;
 
     return new Promise((resolve, reject) => {
         //wait for launch
@@ -49,14 +54,14 @@ export function svelteNative<T>(startPage: typeof SvelteComponent<T>, data: T): 
             resolve(pageInstance);
         })
         Application.on(Application.exitEvent, () => {
-            if (pageInstance) {
-                pageInstance.$destroy();
+            if (pageInstance?.unmount) {
+                pageInstance.unmount();
                 pageInstance = null;
             }
         })
 
         try {
-            Application.run({ create: () => {
+            Application.run({ create: reportingErrors(() => {
                 rootFrame = createElement('frame', window.document as unknown as DocumentNode) as FrameElement;
                 rootFrame.setAttribute("id", "app-root-frame");
 
@@ -67,11 +72,24 @@ export function svelteNative<T>(startPage: typeof SvelteComponent<T>, data: T): 
                 })
 
                 return rootFrame.nativeView;
-            }});
+            }) });
         } catch (e) {
             reject(e);
         }
     });
+}
+
+// Application.run swallows exceptions thrown while creating the root view, which leaves a
+// blank screen with no diagnostics.
+function reportingErrors<T>(create: () => T): () => T {
+    return () => {
+        try {
+            return create();
+        } catch (e) {
+            console.error(e, (e as Error)?.stack);
+            throw e;
+        }
+    };
 }
 
 // Svelte looks to see if window is undefined in order to determine if it is running on the client or in SSR.

@@ -30,4 +30,3 @@ typings/
 !.vscode/launch.json
 !.vscode/extensions.json
 
-webpack.config.js

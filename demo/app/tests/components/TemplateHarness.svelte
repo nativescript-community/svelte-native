@@ -5,8 +5,6 @@
   export let test_subject;
 </script>
 
-<Template bind:this={test_subject} extra-prop="test extra prop" let:item>
-  <label text="test text {item ? item : ''}" />
+<Template bind:this={test_subject} extra-prop="test extra prop" let:item let:index>
+  <label text="test text {item ? item : ''}{index != null ? ` #${index}` : ''}" />
 </Template>
-
-

@@ -1,3 +1,3 @@
 {#if __IOS__}
-    <slot />
+    <slot></slot>
 {/if}
