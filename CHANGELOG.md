@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [5.0.0-rc.1](https://github.com/nativescript-community/svelte-native/compare/v5.0.0-rc.0...v5.0.0-rc.1) (2026-11-26)
+
+
+### Features
+
+* **preprocess:** rewrite transition directives to attachments ([966cc41](https://github.com/nativescript-community/svelte-native/commit/966cc411656bc2b2cbc0ccabc69d1bc101e05a85))
+* **preprocess:** support on:event forwarding and fix CustomEvent shim ([edadc2d](https://github.com/nativescript-community/svelte-native/commit/edadc2de768c6fbf4d0afa0e8ae16170aeecb068))
+* **templates:** mount API, finer recycling updates and batched native updates ([e5fb443](https://github.com/nativescript-community/svelte-native/commit/e5fb44350d553f32203816fdc3a88795db484591))
+* **transitions:** collapse option animating height and margins with the transition ([450ac93](https://github.com/nativescript-community/svelte-native/commit/450ac93248ec585bafbb8ad629d89ab02c8a0376))
+* **transitions:** native-animated transitions as attachments ([7050be3](https://github.com/nativescript-community/svelte-native/commit/7050be34583db8c5f7cdb6423ccf7bed0d6941a0))
+
+
+### Bug Fixes
+
+* **build:** resolve the shared renderer from the transitions bundle ([ff791f4](https://github.com/nativescript-community/svelte-native/commit/ff791f4d5d460bc1f0fb869c207915a790a3bf89))
+* **demo:** commit webpack config resolving Svelte 5's client runtime ([741ec9f](https://github.com/nativescript-community/svelte-native/commit/741ec9f79f01ef6f815c1f8526ac9381897e4473))
+* **preprocess:** keep function attributes on elements with a spread ([d307909](https://github.com/nativescript-community/svelte-native/commit/d3079092b1392a5e2d5acea8ed1d7588b62ad4e3))
+* **transitions:** collapse intro no longer jumps to full height before growing ([5ee8792](https://github.com/nativescript-community/svelte-native/commit/5ee8792dc91bc1853387618dc0fa7bfb58f3f308))
+* **transitions:** do not cancel the outro when the effect is torn down ([bf51777](https://github.com/nativescript-community/svelte-native/commit/bf517773d1d8500a8ccc5ad5979875daa88fbec4))
+
 ## [5.0.0-rc.0](https://github.com/nativescript-community/svelte-native/compare/v1.0.32...v5.0.0-rc.0) (2026-11-24)
 
 Svelte 5 support, built on Svelte's official custom renderer API (`svelte@^5.59.0`).
