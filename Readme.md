@@ -21,7 +21,7 @@ Svelte Native includes Svelte specific integrations such as
 | svelte-native | Svelte | NativeScript |
 | --- | --- | --- |
 | 5.x | `^5.59.0` | 8.x / 9.x |
-| 1.x (branch [`4.x`](https://github.com/nativescript-community/svelte-native/tree/4.x)) | 3.x / 4.x | 8.x |
+| 4.x (was 1.x, branch [`4.x`](https://github.com/nativescript-community/svelte-native/tree/4.x)) | 3.x / 4.x | 8.x |
 
 ## Installation
 

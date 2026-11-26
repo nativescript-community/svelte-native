@@ -2,13 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-## [5.0.0](https://github.com/nativescript-community/svelte-native/compare/v1.0.32...v5.0.0) (2026-11-24)
+## [5.0.0-rc.0](https://github.com/nativescript-community/svelte-native/compare/v1.0.32...v5.0.0-rc.0) (2026-11-24)
 
 Svelte 5 support, built on Svelte's official custom renderer API (`svelte@^5.59.0`).
 
 ### ⚠ BREAKING CHANGES
 
-* Requires `svelte@^5.59.0`; Svelte 3/4 projects should stay on 1.x (maintenance branch `4.x`).
+* Requires `svelte@^5.59.0`; Svelte 3/4 projects should stay on the Svelte 4 line (1.x, then 4.x from the `4.x` branch).
 * Components are compiled with `compilerOptions.experimental.customRenderer: "@nativescript-community/svelte-native/dom/renderer"`, and `svelteNativePreprocess()` from `@nativescript-community/svelte-native/preprocess` replaces `svelte-native-preprocessor`.
 * `animate:`, `{@html}` and `<svelte:head|window|body|document>` are not supported by Svelte in custom renderer mode. `transition:`/`in:`/`out:` are rejected too, and replaced by native transitions (see Features).
 * `navigate()`/`showModal()` return the component's exports with `unmount()` (`$destroy()` remains as an alias); `$set`/`$on` are gone.
