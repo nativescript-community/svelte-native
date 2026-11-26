@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [4.0.0](https://github.com/nativescript-community/svelte-native/compare/v1.0.32...v4.0.0) (2026-11-26)
+
 ### [1.0.32](https://github.com/nativescript-community/svelte-native/compare/v1.0.31...v1.0.32) (2025-12-28)
 
 
